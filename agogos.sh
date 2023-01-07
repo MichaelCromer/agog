@@ -28,6 +28,7 @@ set -o pipefail
 set -o nounset
 if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
 
+
 function sagen() {
     if [ -x "$(command -v say)" ]; then
         # macOS
@@ -36,6 +37,15 @@ function sagen() {
         # other
         echo $@ | espeak -s 120 2>/dev/null
     fi
+}
+
+function agogo-clockoff() {
+    echo "in clockoff"
+}
+
+function agogo-clockon() {
+    agogo-clockoff
+    echo "in clockon with $1"
 }
 
 function remindme() {
@@ -66,6 +76,7 @@ Available commands:
 basic flags
     -h, --help      Show this help and exit
     -v, --version   Show the version number
+    -?, --info      Explain agogo.sh
 
 start and end the program
     clockon         Initialise the program
@@ -83,6 +94,58 @@ operate on projects
     toggle          Toggle the project as active/inactive
 
 HELPMSG
+    exit 0
+}
+
+function information() {
+    cat <<INFOMSG
+################################################################################
+--------------------------------------------------------------------------------
+ἀγωγός - agōgós - /a.ɡɔː.ɡós/
+    adjective, m or f; second declension (Attic Greek)
+    1. leading, guiding
+    2. (masc. substantive) guide, escort
+    3. (with πρός or ἐπί) leading to
+    4. drawing, attracting
+    5. eliciting, evoking
+--------------------------------------------------------------------------------
+agogô
+    noun, m (Portuguese < Yoruba)
+    1. percussion instrument consisting of two or three small conical bells
+--------------------------------------------------------------------------------
+à gogo 
+    adverb (French)
+    1. in abundance, galore
+--------------------------------------------------------------------------------
+################################################################################
+
+# What and why?
+
+A *pedagogue* is a teacher, especially a strict or pedantic one. It derives in
+part from the Greek ἀγωγός, with the sense of "leading" or "guiding".
+
+Do you sometimes reflect upon your time in high school and consider that
+(regardless of any *other* evils of that place) the timetable system was highly
+effective at getting nformation into your head? If only you could recapture
+that structure for yourself - rigid blocks of time with clear topics, scattered
+almost uniformly at random through your week.
+
+Even if you have the discipline to commit to one particular topic at a time, do
+you have the arbitrary disregard for human feelings of an automated timetabling
+system? (Don't answer that). How do you sprinkle your workdays evenly with all
+the things you need to do?  
+
+Agogos is here to help. Create a workspace and add projects to it. Agogos will
+ring two or three small bells and prompt you with the change of topic at a
+frequency you choose. Agogos will select your next topic at random, but will
+weight projects more heavily if it has been a long time since you looked at
+them, or if you flagged them as important (or both).
+
+Hopefully your guilt and feeling of hopelessness over your abundance of tasks
+galore will soon abate.
+
+################################################################################
+INFOMSG
     exit 0
 }
 
@@ -109,15 +172,37 @@ function list-all() {
     ps -ef | grep $0 | grep -vE "(grep|$0 -l|$0 --list|$0 -k|$0 --kill)" | tr -s ' ' | awk -F' ' '{$1=$2=$3=$4=$5=$6=$7=$8=""; print $0}'
 }
 
-function agogo-main() {
-    echo "do awesome stuff"
+function help-requested() {
+    [[ ($# -eq 0) || ( "${1-}" =~ ^-*h(elp)?$ ) ]];
+}
+function info-requested() {
+    [[ ( "${1-}" =~ ^-*i(nformation)?$ ) ]];
 }
 
-if [[ "${1-}" =~ ^-*h(elp)?$ ]]; then
+function main() {
+    if help-requested "$@"; then
+        usage
+        
+    fi
+    if info-requested "$@"; then
+        information
+    fi
+    local main_command=$1
+    
+    if [[ ($main_command == "clockon") ]]; then
+        local workspace=${2:-"default"}
+        agogo-clockon "$workspace"
+    elif [[ ($main_command == "clockoff") ]]; then
+        agogo-clockoff
+    fi
     usage
-fi
+}
 
-agogo-main "$@"
+#if [[ "${1-}" =~ ^-*h(elp)?$ ]]; then
+    #usage
+#fi
+
+main "$@"
 
 #   
 #   function main() {
