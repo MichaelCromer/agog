@@ -1,0 +1,51 @@
+
+################################################################################
+--------------------------------------------------------------------------------
+Usage: 
+    
+    agogo [--version] [--help] [--info] <command> <args>
+
+--------------------------------------------------------------------------------
+Synopsis:
+    
+    Help partition time between projects in a way that is fair to all of them.
+
+--------------------------------------------------------------------------------
+Available commands:
+
+    basic flags
+        -h, --help      Show this help and exit
+        -v, --version   Show the version number
+        --info          Explain 'agogo'
+
+    program management and information
+        clockon         Begin agogo 
+        clockoff        End agogo
+        status          Give a synopsis of the current state
+        list            List workspaces or their contents
+        help            Search the helpfiles for a topic
+
+    operate on workspaces
+        create          Create a workspace
+        destroy         Destroy a workspace
+
+    operate on projects
+        add             Create a new project
+        set             Set the properties of a project
+        toggle          Toggle the project as active/inactive
+        rm, remove      Remove a project
+        mv, move        Move a project to another workspace
+        cp, copy        Copy a project to another workspace
+
+--------------------------------------------------------------------------------
+Getting help:
+
+    Try "agogo help <keyword>" to learn about a particular topic. Any of the
+    above commands work as keywords. The keyword 'basic' will display this help
+    screen. The keywords 'example' or 'tutorial' will provide a brief overview
+    of the agogo workflow. Omitting the keyword will give a list of possible
+    help topics.
+    
+--------------------------------------------------------------------------------
+################################################################################
+

@@ -11,7 +11,7 @@
 
 # Bonus: if you want these commands to run in
 # the background (and free up your terminal)
-# add this function to your ~/.bashrc or ~/.zshrc
+# add this to your ~/.bashrc or ~/.zshrc
 
 # remindme() {
 #     if ! [[ ($# -eq 3) ]]; then
@@ -28,8 +28,24 @@ set -o pipefail
 set -o nounset
 if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
 
+agogo-workspace-exists() {
+    grep -qE ^$1$ userdata/workspaces.agogo
+}
 
-function sagen() {
+agogo-get-current-workspace() {
+    if [[ -e userdata/.current-ws.agogo ]]; then
+        echo < "userdata/.current-ws.agogo" 
+    else
+        echo ""
+    fi
+}
+
+agogo-confirm-prompt() {
+    read -p "Are you sure? $1 [y/N] " -n 1 -r
+    [[ $REPLY =~ ^[Yy]$ ]];
+}
+
+sagen() {
     if [ -x "$(command -v say)" ]; then
         # macOS
         echo $@ | say
@@ -39,16 +55,79 @@ function sagen() {
     fi
 }
 
-function agogo-clockoff() {
-    echo "in clockoff"
+agogo-clockoff() {
+    if [[ !(-e userdata/.current-ws.agogo) ]]; then
+        echo "Error: agogo is not clocked on"
+        exit 1
+    fi
+    if (agogo-confirm-prompt "This will terminate all agogo processes."); then
+        rm userdata/.current-ws.agogo
+        echo "\nTODO complete clockoff logic"
+    else
+        echo "Clockoff aborted; agogo is still running"
+    fi
 }
 
-function agogo-clockon() {
-    agogo-clockoff
-    echo "in clockon with $1"
+agogo-clockon() {
+    echo "$1" > userdata/.current-ws.agogo
+    echo "TODO complete clockon logic"
+    echo "Clocked on to workspace '$1'"
 }
 
-function remindme() {
+agogo-create() {
+    if [[ ($# -eq 0) ]]; then
+        echo "Error: You must specify a workspace name"
+        exit 1
+    fi
+    
+    if (agogo-workspace-exists $1); then
+        echo "Error: Workplace '$1' already exists!"
+    else
+        echo $1 >> userdata/workspaces.agogo
+        touch "userdata/ws-$1.agogo"
+        echo "Created new workspace '$1'"
+    fi
+}
+
+agogo-destroy() {
+    if [[ ($# -eq 0) ]]; then
+        echo "Error: You must specify a workspace name"
+        exit 1
+    fi
+    
+    if (agogo-workspace-exists "$1"); then
+        if (agogo-confirm-prompt "This will destroy the workspace '$1' and all its projects"); then
+            sed -i "/^$1$/d" userdata/workspaces.agogo
+            echo "\nDestroyed workspace '$1' and all its projects"
+        fi
+    else
+        echo "Error: Workspace '$1' does not exist."
+    fi
+}
+
+agogo-status() {
+    local curr_ws=userdata/.current-ws.agogo
+    if [[ !(-e $curr_ws) ]]; then
+        echo "You are clocked off"
+    else
+        echo "Currently clocked on to workspace '$(agogo-get-current-workspace)'"
+    fi
+}
+
+agogo-list-workspaces() {
+    cat userdata/workspaces.agogo
+}
+
+agogo-list-projects() {
+    if (agogo-workspace-exists "$1"); then
+        cat "userdata/ws-$1.agogo"
+    else
+        echo "Error: No workspace with name '$1' exists."
+        exit 1
+    fi
+}
+
+remindme() {
     ((frequency = $2 * 60))
     ((duration = $3 * 3600))
     if [[ $frequency -ge $duration ]]; then
@@ -65,101 +144,34 @@ function remindme() {
     sagen "finished $1"
 }
 
-function usage() {
-    cat <<HELPMSG
-usage: agogo [--version] [--help] <command> <args>
+agogo-help() {
+    if [[ ($# -eq 0) ]]; then
+        cat "helpfiles/basic.agogo"
+        exit 0
+    fi
 
-Help to partition time between various projects in a way that is fair to all of them.
-
-Available commands:
-
-basic flags
-    -h, --help      Show this help and exit
-    -v, --version   Show the version number
-    -?, --info      Explain agogo.sh
-
-start and end the program
-    clockon         Initialise the program
-    clockoff        End the program
-
-operate on workspaces
-    create          Create a new workspace
-    destroy         Destroy a workspace
-    list            List workspaces or their contents
-
-operate on projects
-    add             Create a new project
-    remove          Remove a project
-    set             Set the properties of a project
-    toggle          Toggle the project as active/inactive
-
-HELPMSG
+    local helpfile="helpfiles/$1.agogo"
+    
+    if [[ !(-e "$helpfile") ]]; then
+        echo "Error: $1 is not a recognised agogo command or help topic"
+        exit 1
+    fi
+    
+    cat "$helpfile"
     exit 0
 }
 
-function information() {
-    cat <<INFOMSG
-################################################################################
---------------------------------------------------------------------------------
-ἀγωγός - agōgós - /a.ɡɔː.ɡós/
-    adjective, m or f; second declension (Attic Greek)
-    1. leading, guiding
-    2. (masc. substantive) guide, escort
-    3. (with πρός or ἐπί) leading to
-    4. drawing, attracting
-    5. eliciting, evoking
---------------------------------------------------------------------------------
-agogô
-    noun, m (Portuguese < Yoruba)
-    1. percussion instrument consisting of two or three small conical bells
---------------------------------------------------------------------------------
-à gogo 
-    adverb (French)
-    1. in abundance, galore
---------------------------------------------------------------------------------
-################################################################################
-
-# What and why?
-
-A *pedagogue* is a teacher, especially a strict or pedantic one. It derives in
-part from the Greek ἀγωγός, with the sense of "leading" or "guiding".
-
-Do you sometimes reflect upon your time in high school and consider that
-(regardless of any *other* evils of that place) the timetable system was highly
-effective at getting nformation into your head? If only you could recapture
-that structure for yourself - rigid blocks of time with clear topics, scattered
-almost uniformly at random through your week.
-
-Even if you have the discipline to commit to one particular topic at a time, do
-you have the arbitrary disregard for human feelings of an automated timetabling
-system? (Don't answer that). How do you sprinkle your workdays evenly with all
-the things you need to do?  
-
-Agogos is here to help. Create a workspace and add projects to it. Agogos will
-ring two or three small bells and prompt you with the change of topic at a
-frequency you choose. Agogos will select your next topic at random, but will
-weight projects more heavily if it has been a long time since you looked at
-them, or if you flagged them as important (or both).
-
-Hopefully your guilt and feeling of hopelessness over your abundance of tasks
-galore will soon abate.
-
-################################################################################
-INFOMSG
-    exit 0
-}
-
-function purge-all() {
+purge-all() {
     procs=$(ps -ef | grep $0 | grep -vE "(grep|$0 -k|$0 --kill)")
     if ! [ -z "$procs" ]; then # check if ps results are null
         list-all
-        read -p "Kill these processes? [y/N] " -n 1 -r
+        read -p "Are you sure? [y/N] " -n 1 -r
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             echo
             ps -ef | grep $0 | grep -vE "(grep|$0 -k|$0 --kill)" | tr -s ' ' | awk -F' ' '{print $2}' | xargs kill
         else
             if [[ $REPLY =~ ^[Nn]$ ]]; then echo; fi
-            echo "kill command aborted"
+            echo "Clockoff aborted; agogo is still running"
             exit 0
         fi
     else
@@ -167,54 +179,69 @@ function purge-all() {
     fi
 }
 
-function list-all() {
-    echo "running reminders"
+list-all() {
+    echo "This will terminate agogo running on the following workspace"
     ps -ef | grep $0 | grep -vE "(grep|$0 -l|$0 --list|$0 -k|$0 --kill)" | tr -s ' ' | awk -F' ' '{$1=$2=$3=$4=$5=$6=$7=$8=""; print $0}'
 }
 
-function help-requested() {
-    [[ ($# -eq 0) || ( "${1-}" =~ ^-*h(elp)?$ ) ]];
+help-requested() {
+    [[ ($# -eq 0) || ( "${1-}" =~ ^-+h(elp)?$ ) ]];
 }
-function info-requested() {
-    [[ ( "${1-}" =~ ^-*i(nformation)?$ ) ]];
+info-requested() {
+    [[ ( "${1-}" =~ ^-+info$ ) ]];
 }
 
-function main() {
-    if help-requested "$@"; then
-        usage
-        
+agogo-verify-setup() {
+    if [[ !(-e "userdata/workspaces.agogo") ]]; then
+        touch userdata/workspaces.agogo
     fi
-    if info-requested "$@"; then
-        information
+    if !(agogo-workspace-exists "default");  then
+        agogo-create "default"
     fi
-    local main_command=$1
+}
+
+main() {
+    # This checks that all the required files are in place
+    agogo-verify-setup
     
-    if [[ ($main_command == "clockon") ]]; then
+    # We catch some floundering around and certain flags
+    if help-requested "$@"; then
+        agogo-help
+    elif info-requested "$@"; then
+        agogo-help "info"
+    fi
+    
+    # Otherwise we check for a proper use case
+    local main_command=$1
+   
+    if  [[ ($main_command == "help") ]]; then
+        shift
+        agogo-help "$@"
+    elif [[ ($main_command == "clockon") ]]; then
         local workspace=${2:-"default"}
         agogo-clockon "$workspace"
     elif [[ ($main_command == "clockoff") ]]; then
         agogo-clockoff
+    elif [[ ($main_command == "create") ]]; then
+        shift
+        agogo-create "$@"
+    elif [[ ($main_command == "destroy") ]]; then
+        shift
+        agogo-destroy "$@"
+    elif [[ ($main_command == "list") ]]; then
+        shift
+        if [[ ($# -eq 0) ]]; then
+            agogo-list-workspaces
+        else
+            agogo-list-projects "$@"
+        fi
+    elif [[ ($main_command == "status") ]]; then
+        agogo-status
+    else
+        echo "Not a recognised agogo command. Try "agogo help", "agogo -h", or "agogo --help" for a list of commands."
     fi
-    usage
+    exit 0
 }
-
-#if [[ "${1-}" =~ ^-*h(elp)?$ ]]; then
-    #usage
-#fi
 
 main "$@"
 
-#   
-#   function main() {
-#       if [[ ($@ == "--kill") || ($@ == "-k") ]]; then
-#           purge-all
-#       elif [[ ($@ == "--list") || ($@ == "-l") ]]; then
-#           list-all
-#       elif [[ ($@ == "--help") || ($@ == "-h") || ! ($# -eq 3) ]]; then
-#           usage
-#       else
-#           remindme "$@"
-#       fi
-#   }
-#   
-#   main "$@"
