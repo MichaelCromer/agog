@@ -28,23 +28,44 @@ set -o pipefail
 set -o nounset
 if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
 
+# BOOLEAN for checking workplace existence
 agogo-workspace-exists() {
     grep -qE ^$1$ userdata/workspaces.agogo
 }
 
-agogo-get-current-workspace() {
-    if [[ -e userdata/.current-ws.agogo ]]; then
-        echo < "userdata/.current-ws.agogo" 
+agogo-project-exists-on() {
+    grep -qE ^$1$ "userdata/ws-${2}.agogo"
+}
+
+# BOOLEAN for checking active status (use existence of .current-ws as proxy!)
+agogo-is-running() {
+    [[ (-e userdata/.current-ws.agogo) ]];
+}
+
+# Return name of current ws, or empty string if none
+agogo-current-workspace() {
+    if (agogo-is-running); then
+        cat userdata/.current-ws.agogo 
     else
         echo ""
     fi
 }
 
+# A custom read with default 'no' response. Argument $1 gives detail to the used
 agogo-confirm-prompt() {
     read -p "Are you sure? $1 [y/N] " -n 1 -r
     [[ $REPLY =~ ^[Yy]$ ]];
 }
 
+agogo-error() {
+    printf "\nError: ${*}\n\n" 1>&2
+}
+
+agogo-println() {
+    printf "\n${*}\n"
+}
+
+# old remindme.sh function to be used later
 sagen() {
     if [ -x "$(command -v say)" ]; then
         # macOS
@@ -55,33 +76,40 @@ sagen() {
     fi
 }
 
+# Cleans up all the session data and terminates all processes
 agogo-clockoff() {
-    if [[ !(-e userdata/.current-ws.agogo) ]]; then
-        echo "Error: agogo is not clocked on"
-        exit 1
+    if !(agogo-is-running); then
+        agogo-println "You are not clocked on!"
+        exit 0
     fi
     if (agogo-confirm-prompt "This will terminate all agogo processes."); then
         rm userdata/.current-ws.agogo
-        echo "\nTODO complete clockoff logic"
+        agogo-println "TODO complete clockoff logic"
     else
-        echo "Clockoff aborted; agogo is still running"
+        agogo-println "Clockoff aborted; agogo is still running"
     fi
 }
 
+# creates the current clockon status or changes it if already clocked on
 agogo-clockon() {
-    echo "$1" > userdata/.current-ws.agogo
-    echo "TODO complete clockon logic"
-    echo "Clocked on to workspace '$1'"
+    if (agogo-workspace-exists $1) then
+        echo $1 > userdata/.current-ws.agogo
+        echo "TODO complete clockon logic"
+        echo "Clocked on to workspace '$1'"
+    else
+        agogo-error "'$1' is not a workspace"
+    fi
 }
 
+# creates a new workspace
 agogo-create() {
     if [[ ($# -eq 0) ]]; then
-        echo "Error: You must specify a workspace name"
+        agogo-error "You must specify a workspace name"
         exit 1
     fi
     
     if (agogo-workspace-exists $1); then
-        echo "Error: Workplace '$1' already exists!"
+        agogo-error "Workplace '$1' already exists!"
     else
         echo $1 >> userdata/workspaces.agogo
         touch "userdata/ws-$1.agogo"
@@ -89,9 +117,10 @@ agogo-create() {
     fi
 }
 
+# destroys the specified workspace
 agogo-destroy() {
     if [[ ($# -eq 0) ]]; then
-        echo "Error: You must specify a workspace name"
+        agogo-error "You must specify a workspace name"
         exit 1
     fi
     
@@ -101,7 +130,7 @@ agogo-destroy() {
             echo "\nDestroyed workspace '$1' and all its projects"
         fi
     else
-        echo "Error: Workspace '$1' does not exist."
+        agogo-error "Workspace '$1' does not exist."
     fi
 }
 
@@ -110,23 +139,61 @@ agogo-status() {
     if [[ !(-e $curr_ws) ]]; then
         echo "You are clocked off"
     else
-        echo "Currently clocked on to workspace '$(agogo-get-current-workspace)'"
+        echo "Currently clocked on to workspace '$(agogo-current-workspace)'"
     fi
 }
 
+# prints a list of all workspaces
 agogo-list-workspaces() {
     cat userdata/workspaces.agogo
 }
 
+# given a workspace name, prints a list of all its projects
 agogo-list-projects() {
-    if (agogo-workspace-exists "$1"); then
-        cat "userdata/ws-$1.agogo"
+    if [[ ($# -eq 0) ]]; then
+        if !(agogo-is-running); then
+            agogo-error "agogo is not clocked on. Please specify a workspace to list projects from."
+            exit 1
+        fi
+        local ws=$(agogo-current-workspace)
     else
-        echo "Error: No workspace with name '$1' exists."
-        exit 1
-    fi
+        if !(agogo-workspace-exists $1); then
+            agogo-error "No workspace with name '$1' exists."
+            exit 1
+        fi       
+        local ws=$1
+    fi   
+    cat "userdata/ws-${ws}.agogo"
 }
 
+agogo-add() {
+    if [[ ($# -eq 0) ]]; then
+        agogo-error "must specify a project name."
+        exit 1
+    fi
+    
+    if [[ ($# -eq 1) ]]; then
+        if !(agogo-is-running); then
+            agogo-error "agogo is not clocked on. Please specify a workspace to add project '${1}' to."
+            exit 1
+        fi
+        local ws=$(agogo-current-workspace)
+    else
+        local ws=$2
+    fi
+    if !(agogo-workspace-exists ${ws}); then
+        agogo-error "workspace '${ws}' does not exist"
+        exit 1
+    fi
+    if (agogo-project-exists-on $1 ${ws}); then
+        agogo-error "project '$1' already exists on workspace '${ws}'."
+        exit 1
+    fi
+    echo $1 >> "userdata/ws-${ws}.agogo"
+    echo "Successfully added project '$1' to workspace '${ws}'."
+}
+
+# old remindme.sh function to use later
 remindme() {
     ((frequency = $2 * 60))
     ((duration = $3 * 3600))
@@ -144,6 +211,7 @@ remindme() {
     sagen "finished $1"
 }
 
+# searches for and then fetches the appropriate help file
 agogo-help() {
     if [[ ($# -eq 0) ]]; then
         cat "helpfiles/basic.agogo"
@@ -153,7 +221,7 @@ agogo-help() {
     local helpfile="helpfiles/$1.agogo"
     
     if [[ !(-e "$helpfile") ]]; then
-        echo "Error: $1 is not a recognised agogo command or help topic"
+        agogo-error "$1 is not a recognised agogo command or help topic"
         exit 1
     fi
     
@@ -161,6 +229,7 @@ agogo-help() {
     exit 0
 }
 
+# old remindme.sh function to use later
 purge-all() {
     procs=$(ps -ef | grep $0 | grep -vE "(grep|$0 -k|$0 --kill)")
     if ! [ -z "$procs" ]; then # check if ps results are null
@@ -179,18 +248,22 @@ purge-all() {
     fi
 }
 
+# old remindme.sh function to use later
 list-all() {
     echo "This will terminate agogo running on the following workspace"
     ps -ef | grep $0 | grep -vE "(grep|$0 -l|$0 --list|$0 -k|$0 --kill)" | tr -s ' ' | awk -F' ' '{$1=$2=$3=$4=$5=$6=$7=$8=""; print $0}'
 }
 
+# BOOLEAN to yield basic help 
 help-requested() {
     [[ ($# -eq 0) || ( "${1-}" =~ ^-+h(elp)?$ ) ]];
 }
+# BOOLEAN to yield basic info
 info-requested() {
     [[ ( "${1-}" =~ ^-+info$ ) ]];
 }
 
+# checks the file structure is correct
 agogo-verify-setup() {
     if [[ !(-e "userdata/workspaces.agogo") ]]; then
         touch userdata/workspaces.agogo
@@ -201,10 +274,10 @@ agogo-verify-setup() {
 }
 
 main() {
-    # This checks that all the required files are in place
+    # Check that all the required files are in place
     agogo-verify-setup
     
-    # We catch some floundering around and certain flags
+    # We catch some floundering around with args, and certain flags
     if help-requested "$@"; then
         agogo-help
     elif info-requested "$@"; then
@@ -237,7 +310,11 @@ main() {
         fi
     elif [[ ($main_command == "status") ]]; then
         agogo-status
+    elif [[ ($main_command == "add") ]]; then
+        shift
+        agogo-add "$@"
     else
+        # if all else fails, we complain
         echo "Not a recognised agogo command. Try "agogo help", "agogo -h", or "agogo --help" for a list of commands."
     fi
     exit 0
