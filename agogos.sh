@@ -85,7 +85,9 @@ agogo-current-workspace() {
 
 # A custom read with default 'no' response. Argument $1 gives detail to the used
 agogo-confirm-prompt() {
-    read -p "Are you sure? ${1} [y/N] " -n 1 -r
+    agogo-print "${1}"
+    agogo-print ""
+    read -p "Are you sure? [y/N] " -n 1 -r
     [[ "${REPLY}" =~ ^[Yy]$ ]];
 }
 
@@ -97,7 +99,7 @@ agogo-error() {
 
 # For printing to the user properly
 agogo-print() {
-    printf "\n${*}\n"
+    printf "\n${*}"
 }
 
 # old remindme.sh function to be used later
@@ -125,6 +127,7 @@ agogo-clockoff() {
     else
         agogo-print "Clockoff aborted; agogo is still running"
     fi
+    agogo-print ""
 }
 
 # inits a new running session to a specified workspace or changes workspaces
@@ -153,6 +156,7 @@ agogo-clockon() {
     else
         agogo-error "'${ws}' is not a workspace"
     fi
+    agogo-print ""
 }
 
 # Here will be implemented the interesting mathematics
@@ -176,19 +180,30 @@ agogo-create() {
         touch "$(agogo-workspace-info-file "${ws}")"
         agogo-print "Created new workspace '${ws}'"
     fi
+    agogo-print ""
 }
 
 # destroys the specified workspace
 agogo-destroy() {
+
+    # I like to be dramatic
+    local RED="\033[0;31m"
+    local PLN="\033[0m"
+
+    # Needs a ws name
     if [[ ($# -eq 0) ]]; then
         agogo-error "You must specify a workspace name"
     fi
     
+    # Catch that ~~pokemon~~ name!
     local ws="${1}"
     
+    # Check it exists, then confirm prompt
     if (agogo-workspace-exists "${ws}"); then
         if (agogo-confirm-prompt "This will destroy the workspace '${ws}' and all its projects. 
-            This action cannot be undone."); then
+            ${RED}This action cannot be undone.${PLN}"); then
+
+            # Remove it from the list file, and delete its project data
             sed -i "/^${ws}$/d" "$(agogo-workspaces-list-file)"
             rm "$(agogo-workspace-info-file "${ws}")"
             agogo-print "\nDestroyed workspace '${ws}' and all its projects"
@@ -196,24 +211,40 @@ agogo-destroy() {
     else
         agogo-error "Workspace '${ws}' does not exist."
     fi
+    agogo-print ""
 }
 
+# Prints whether there is an active session right now
 agogo-status() {
     if !(agogo-is-running); then
         agogo-print "You are clocked off"
     else
         agogo-print "Currently clocked on to workspace '$(agogo-current-workspace)'"
     fi
+    agogo-print ""
 }
 
 # prints a list of all workspaces
 agogo-list-workspaces() {
     agogo-print "Currently tracked workspaces :"
+    agogo-print ""
+
+    local GRN="\033[0;32m"
+    local BLD="\033[1m"
+    local PLN="\033[0m"
+    
     while read -r line
     do
-        agogo-print "\t$line"
+        if [[ "${line}" == "$(agogo-current-workspace)" ]]; then
+            agogo-print "${GRN}CURR${PLN}\t${BLD}${line}${PLN}"
+        else
+            agogo-print "\t$line"
+        fi
     done < "$(agogo-workspaces-list-file)"
+    
+    agogo-print ""
     agogo-print "To see detail about a workspace's projects, include its name as an argument."
+    agogo-print ""
 }
 
 # given a workspace name, prints a list of all its projects
@@ -230,6 +261,7 @@ agogo-list-projects() {
         fi       
     fi   
     cat "$(agogo-workspace-info-file "${ws}")"
+    agogo-print ""
 }
 
 # Add a new project to a given workspace, or the current one if none specified
@@ -245,7 +277,7 @@ agogo-add() {
     # Can add to current ws without specifying its name, but agogo must be running
     if [[ ($# -eq 1) ]]; then
         if !(agogo-is-running); then
-            agogo-error "agogo is not clocked on. Please clock on first, or manually specify a workspace to add project '${1}' to."
+            agogo-error "agogo is not clocked on. Please clock on first, or specify a workspace to add project '${1}' to."
         fi
         local ws="$(agogo-current-workspace)"
     else
@@ -263,10 +295,15 @@ agogo-add() {
     fi
 
     # We're all good! Set up the thing!
-    echo "${pj}" >> "$(agogo-workspace-info-file "${ws}")"
-    agogo-print "Successfully added project '${pj}' to workspace '${ws}'."
+    echo "${pj}"        >> "$(agogo-workspace-info-file "${ws}")"
+    echo "AGE:0"        >> "$(agogo-workspace-info-file "${ws}")" 
+    echo "PRIORITY:1"   >> "$(agogo-workspace-info-file "${ws}")"
+    echo "SCORE:"       >> "$(agogo-workspace-info-file "${ws}")"
+    echo "\n"           >> "$(agogo-workspace-info-file "${ws}")" 
+    agogos-print "Successfully created project '${pj}' on workspace '${ws}'."
+    agogo-print ""
 }
-
+    
 # Remove a project from a given workspace, or the current one if none specified
 agogo-remove() {
     # Must specify a project
@@ -297,11 +334,13 @@ agogo-remove() {
     fi
 
     # Now we can proceed
-    if (agogo-confirm-prompt "This will permanently remove the project '${pj}' from the workspace '${ws}'. This action cannot be undone."); then
+    if (agogo-confirm-prompt "This will permanently remove the project '${pj}' from the workspace '${ws}'.
+        ${RED}This action cannot be undone.${PLN}"); then
         sed -i "/^${pj}$/d" "$(agogo-workspace-info-file "${ws}")"
     else
         agogo-print "Remove command aborted. No action taken."
     fi
+    agogo-print ""
 }
 
 # old remindme.sh function to use later
@@ -356,6 +395,7 @@ purge-all() {
     else
         agogo-print "No reminders to kill"
     fi
+    agogo-print ""
 }
 
 # old remindme.sh function to use later
@@ -374,12 +414,17 @@ info-requested() {
 
 # checks the file structure is correct
 agogo-verify-setup() {
+    if [[ !(-d userdata) ]]; then
+        mkdir "userdata"
+    fi
+
     if [[ !(-e "$(agogo-workspaces-list-file)") ]]; then
         touch "$(agogo-workspaces-list-file)"
     fi
     if !(agogo-workspace-exists "default");  then
         agogo-create "default"
     fi
+    agogo-print ""
 }
 
 main() {
@@ -422,6 +467,7 @@ main() {
         # if all else fails, we complain
         agogo-print "Not a recognised agogo command. Try 'agogo -h', or 'agogo --help' for a list of commands."
     fi
+    agogo-print ""
     exit 0
 }
 
