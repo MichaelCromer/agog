@@ -3,7 +3,7 @@
 #   
 #    ###     ###     ###     ###     ###   
 #   ## ##   #   #   #   #   #   #   #   #  
-#   #   #   #       #   #   #       #   #  
+
 #   #####   #  ##   #   #   #  ##   #   #  
 #   #   #   #   #   #   #   #   #   #   #  
 #   #   #    ## #    ###     ## #    ###   
@@ -113,7 +113,6 @@ sagen() {
 
 # Cleans up all the session data and terminates all processes
 agogo-clockoff() {
-    
     # Can't clock off if agogo is not clocked on!
     if !(agogo-is-running); then
         agogo-error "You are not clocked on!"
@@ -128,9 +127,8 @@ agogo-clockoff() {
     fi
 }
 
-# creates the current clockon status or changes it if already clocked on
+# inits a new running session to a specified workspace or changes workspaces
 agogo-clockon() {
-
     # Can't clock on twice, but might clock on to a different workspace
     if [[ ($# -eq 0) ]]; then
         if (agogo-is-running); then
@@ -189,7 +187,8 @@ agogo-destroy() {
     local ws="${1}"
     
     if (agogo-workspace-exists "${ws}"); then
-        if (agogo-confirm-prompt "This will destroy the workspace '${ws}' and all its projects. This action cannot be undone."); then
+        if (agogo-confirm-prompt "This will destroy the workspace '${ws}' and all its projects. 
+            This action cannot be undone."); then
             sed -i "/^${ws}$/d" "$(agogo-workspaces-list-file)"
             rm "$(agogo-workspace-info-file "${ws}")"
             agogo-print "\nDestroyed workspace '${ws}' and all its projects"
@@ -209,7 +208,12 @@ agogo-status() {
 
 # prints a list of all workspaces
 agogo-list-workspaces() {
-    cat "$(agogo-workspaces-list-file)"
+    agogo-print "Currently tracked workspaces :"
+    while read -r line
+    do
+        agogo-print "\t$line"
+    done < "$(agogo-workspaces-list-file)"
+    agogo-print "To see detail about a workspace's projects, include its name as an argument."
 }
 
 # given a workspace name, prints a list of all its projects
