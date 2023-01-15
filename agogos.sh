@@ -182,23 +182,71 @@ agogo-mainloop() {
         local currentProject="$(agogo-choose-project "${ws}")"
         zenity --info --text="time to work on project '${currentProject}'"
         sleep 10
+        agogo-increment-scores "${ws}"
     done
     
     exit 0
 }
 
+agogo-set-score() {
+    local ws="${1}"
+    local pj="${2}"
+    local score="${3}"
+    local file="$(agogo-workspace-info-file "${ws}")"
+
+    sed -i "/${pj}/{n;n;n; s/^.*$/${score}/g }" "${file}"
+}
+
+agogo-increment-scores() {
+    local ws="${1}"
+    readarray -t projects    < <(agogo-get-projects "${ws}")
+    readarray -t scores      < <(agogo-get-scores "${ws}")
+    readarray -t importances < <(agogo-get-importances "${ws}")
+
+    for ((i=0; i<"${#projects[@]}"; i++)); do
+        local pj="${projects[${i}]}"
+        local sc="${scores[${i}]}"
+        local im="${importances[${i}]}"
+        
+        local newSc=$((sc+im))
+        agogo-set-score "${ws}" "${pj}" "${newSc}"
+    done
+}
+
+agogo-get-property() {
+    local prop="${1}"
+    local ws="${2}"
+    
+    if [[ "${prop}" = "NAME" ]]; then
+        local offset=1
+    elif [[ "${prop}" = "AGE" ]]; then
+        local offset=2
+    elif [[ "${prop}" = "IMPORTANCE" ]]; then
+        local offset=3
+    elif [[ "${prop}" = "SCORE" ]]; then
+        local offset=4
+    else
+        local offset=5
+    fi
+
+    local file="$(agogo-workspace-info-file "${ws}")"
+    local lines="$(sed -n ${offset}~5p "${file}")"
+    echo "${lines}"
+}
+
 agogo-get-scores() {
     local ws="${1}"
-    local file="$(agogo-workspace-info-file "${ws}")"
-    local scores="$(sed -n 4~5p "${file}")"
-    echo "${scores}"
+    agogo-get-property "SCORE" "${ws}" 
 }
 
 agogo-get-projects() {
     local ws="${1}"
-    local file="$(agogo-workspace-info-file "${ws}")"
-    local projects="$(sed -n 1~5p "${file}")"
-    echo "${projects}"
+    agogo-get-property "NAME" "${ws}" 
+}
+
+agogo-get-importances() {
+    local ws="${1}"
+    agogo-get-property "IMPORTANCE" "${ws}"
 }
 
 # Will use scores to weight the next choice
@@ -212,10 +260,10 @@ agogo-choose-project() {
     local ws="${1}"
     readarray -t projects < <(agogo-get-projects "${ws}")
     readarray -t scores   < <(agogo-get-scores "${ws}")
-    #agogo-print "there are ${#projects[@]} projects and ${#scores[@]} scores to choose from"
+    agogo-print "there are ${#projects[@]} projects and ${#scores[@]} scores to choose from"
 
     if [[ ${projects[0]} = "" ]]; then
-        #agogo-print " there are no projects to choose from "
+        agogo-print " there are no projects to choose from "
         echo ""
     else
         local totScore=0
@@ -227,11 +275,11 @@ agogo-choose-project() {
 
         for ((i=0; i<${#scores[@]}; i++)); do
             local s=${scores[${i}]}
-            #agogo-print "looking at element ${i}: project ${projects[${i}]} with score ${scores[${i}]} ; remaining
-            #threshold is ${threshold}"
+            agogo-print "looking at element ${i}: project ${projects[${i}]} with score ${scores[${i}]} ; remaining
+            threshold is ${threshold}"
             if [[ ${threshold} -lt ${s} ]]; then
                 local chosen=${i}
-                #agogo-print "chose index ${chosen}"
+                agogo-print "chose index ${chosen}"
                 break
             fi
             threshold=$((threshold-s))
