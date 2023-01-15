@@ -3,7 +3,7 @@
 #   
 #    ###     ###     ###     ###     ###   
 #   ## ##   #   #   #   #   #   #   #   #  
-
+#   #   #   #       #   #   #       #   #
 #   #####   #  ##   #   #   #  ##   #   #  
 #   #   #   #   #   #   #   #   #   #   #  
 #   #   #    ## #    ###     ## #    ###   
@@ -19,8 +19,7 @@
 # 2. create a symbolic link to this file in /usr/local/bin
 # sudo ln -s ~/scripts/remindme.sh /usr/local/bin/remindme
 # 3. make the symlink executable
-# chmod +x /usr/local/bin/remindme
-# 4. launch your first reminder from anywhere in terminal
+# chmod +x /usr/local/bin/remindme # 4. launch your first reminder from anywhere in terminal
 # remindme "hydration check" 7 3
 # (a hydration check every 7 minutes for 3 hours)
 
@@ -44,7 +43,11 @@ set -o pipefail
 set -o nounset
 
 # Use 'TRACE=1 agogo' at CL to track activity 
-if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
+if [[ "${TRACE-0}" = "1" ]]; then set -o xtrace; fi
+
+agogo-rand-int() {
+    echo $(expr ${RANDOM} % ${1})
+}
 
 # Helpful if I need to change things later
 agogo-current-session-file() {
@@ -143,7 +146,7 @@ agogo-clockon() {
     local ws="${1:-"default"}"
     
     # Don't need to restart timers etc if already here
-    if [[ ("${ws}" == "$(agogo-current-workspace)") ]]; then
+    if [[ ("${ws}" = "$(agogo-current-workspace)") ]]; then
         agogo-error "Already clocked on to workspace '${ws}'"
     fi
 
@@ -152,7 +155,7 @@ agogo-clockon() {
         echo "${ws}" > "$(agogo-current-session-file)"
         agogo-print "TODO complete clockon logic"
         agogo-print "Clocked on to workspace '${ws}'"
-        agogo-mainloop &
+        agogo-mainloop "${ws}" &
     else
         agogo-error "'${ws}' is not a workspace"
     fi
@@ -161,8 +164,72 @@ agogo-clockon() {
 
 # Here will be implemented the interesting mathematics
 agogo-mainloop() {
-    zenity --info "test message" & 
+    local ws="${1}"
+    #   perform some initial logic to decide the number of loops.
+    #   enter the loop
+    #       extract the scores and pick a project
+    #       wait the correct amount of time
+    #       increment the ages (and recalculate the scores
+    #local testarray="$(agogo-get-projects "${ws}")"
+    #echo "${testarray}"
+    
+    agogo-choose-project "${ws}"
+
+    zenity --info --text="test message" & 
     sleep 1000
+}
+
+agogo-get-scores() {
+    local ws="${1}"
+    local file="$(agogo-workspace-info-file "${ws}")"
+    local scores="$(sed -n 4~5p "${file}")"
+    echo "${scores}"
+}
+
+agogo-get-projects() {
+    local ws="${1}"
+    local file="$(agogo-workspace-info-file "${ws}")"
+    local projects="$(sed -n 1~5p "${file}")"
+    echo "${projects}"
+}
+
+# Will use scores to weight the next choice
+# 
+#   an array of scores might look like
+#       [1, 2, 5, 1]
+#   in this case, the third project is most likely with 5/9ths of the "vote"
+#   (projects randomly selected with probabilities proportinal to their scores)
+#
+agogo-choose-project() {
+    local ws="${1}"
+    readarray -t projects < <(agogo-get-projects "${ws}")
+    readarray -t scores   < <(agogo-get-scores "${ws}")
+    #agogo-print "there are ${#projects[@]} projects and ${#scores[@]} scores to choose from"
+
+    if [[ ${projects[0]} = "" ]]; then
+        #agogo-print " there are no projects to choose from "
+        echo ""
+    else
+        local totScore=0
+        for s in "${scores[@]}"; do 
+            totScore=$((totScore+s))
+        done
+
+        local threshold=$(agogo-rand-int ${#scores[@]})
+
+        for ((i=0; i<${#scores[@]}; i++)); do
+            local s=${scores[${i}]}
+            #agogo-print "looking at element ${i}: project ${projects[${i}]} with score ${scores[${i}]} ; remaining
+            #threshold is ${threshold}"
+            if [[ ${threshold} -lt ${s} ]]; then
+                local chosen=${i}
+                #agogo-print "chose index ${chosen}"
+                break
+            fi
+            threshold=$((threshold-s))
+        done
+        echo "${projects[${chosen}]}"
+    fi
 }
 
 # creates a new workspace
@@ -172,7 +239,6 @@ agogo-create() {
     fi
 
     local ws="${1}"
-    
     if (agogo-workspace-exists "${ws}"); then
         agogo-error "Workplace '"${ws}"' already exists!"
     else
@@ -180,6 +246,7 @@ agogo-create() {
         touch "$(agogo-workspace-info-file "${ws}")"
         agogo-print "Created new workspace '${ws}'"
     fi
+    
     agogo-print ""
 }
 
@@ -235,8 +302,8 @@ agogo-list-workspaces() {
     
     while read -r line
     do
-        if [[ "${line}" == "$(agogo-current-workspace)" ]]; then
-            agogo-print "${GRN}CURR${PLN}\t${BLD}${line}${PLN}"
+        if [[ "${line}" = "$(agogo-current-workspace)" ]]; then
+            agogo-print "${GRN}  ON${PLN}\t${BLD}${line}${PLN}"
         else
             agogo-print "\t$line"
         fi
@@ -273,6 +340,10 @@ agogo-add() {
 
     # Capture the name locally
     local pj="${1}"
+
+    if [[ ${pj} = "" ]]; then
+        agogo-error "Project name cannot be empty"
+    fi
     
     # Can add to current ws without specifying its name, but agogo must be running
     if [[ ($# -eq 1) ]]; then
@@ -295,17 +366,21 @@ agogo-add() {
     fi
 
     # We're all good! Set up the thing!
-    echo "${pj}"        >> "$(agogo-workspace-info-file "${ws}")"
-    echo "AGE:0"        >> "$(agogo-workspace-info-file "${ws}")" 
-    echo "PRIORITY:1"   >> "$(agogo-workspace-info-file "${ws}")"
-    echo "SCORE:"       >> "$(agogo-workspace-info-file "${ws}")"
-    echo "\n"           >> "$(agogo-workspace-info-file "${ws}")" 
-    agogos-print "Successfully created project '${pj}' on workspace '${ws}'."
+    echo "${pj}"    >> "$(agogo-workspace-info-file "${ws}")"
+    echo "0"        >> "$(agogo-workspace-info-file "${ws}")" # First row is AGE
+    echo "1"        >> "$(agogo-workspace-info-file "${ws}")" # Second is IMPORTANCE
+    echo "1"        >> "$(agogo-workspace-info-file "${ws}")" # Third is SCORE
+    echo "\n"       >> "$(agogo-workspace-info-file "${ws}")" 
+    agogo-print "Successfully created project '${pj}' on workspace '${ws}'."
     agogo-print ""
 }
     
 # Remove a project from a given workspace, or the current one if none specified
 agogo-remove() {
+
+    local RED="\033[0;31m"
+    local PLN="\033[0m"
+
     # Must specify a project
     if [[ ($# -eq 0) ]]; then
         agogo-error "You must specify a project name"
@@ -336,7 +411,7 @@ agogo-remove() {
     # Now we can proceed
     if (agogo-confirm-prompt "This will permanently remove the project '${pj}' from the workspace '${ws}'.
         ${RED}This action cannot be undone.${PLN}"); then
-        sed -i "/^${pj}$/d" "$(agogo-workspace-info-file "${ws}")"
+        sed -i "/^${pj}$/,+4d" "$(agogo-workspace-info-file "${ws}")"
     else
         agogo-print "Remove command aborted. No action taken."
     fi
@@ -414,7 +489,7 @@ info-requested() {
 
 # checks the file structure is correct
 agogo-verify-setup() {
-    if [[ !(-d userdata) ]]; then
+    if [[ !(-e userdata) ]]; then
         mkdir "userdata"
     fi
 
@@ -422,7 +497,11 @@ agogo-verify-setup() {
         touch "$(agogo-workspaces-list-file)"
     fi
     if !(agogo-workspace-exists "default");  then
-        agogo-create "default"
+        echo "default" >> "$(agogo-workspaces-list-file)"
+        touch "$(agogo-workspace-info-file "default")"
+    fi
+    if [[ !(-e "$(agogo-workspace-info-file "default")") ]]; then
+        touch "$(agogo-workspace-info-file "default")"
     fi
     agogo-print ""
 }
@@ -441,27 +520,27 @@ main() {
     # Otherwise we check for a proper use case
     local main_command=$1
     shift
-    if  [[ ($main_command == "help") ]]; then
+    if  [[ ($main_command = "help") ]]; then
         agogo-help "$@"
-    elif [[ ($main_command == "clockon") ]]; then
+    elif [[ ($main_command = "clockon") ]]; then
         agogo-clockon "$@"
-    elif [[ ($main_command == "clockoff") ]]; then
+    elif [[ ($main_command = "clockoff") ]]; then
         agogo-clockoff
-    elif [[ ($main_command == "create") ]]; then
+    elif [[ ($main_command = "create") ]]; then
         agogo-create "$@"
-    elif [[ ($main_command == "destroy") ]]; then
+    elif [[ ($main_command = "destroy") ]]; then
         agogo-destroy "$@"
-    elif [[ ($main_command == "list") ]]; then
+    elif [[ ($main_command = "list") ]]; then
         if [[ ($# -eq 0) ]]; then
             agogo-list-workspaces
         else
             agogo-list-projects "$@"
         fi
-    elif [[ ($main_command == "status") ]]; then
+    elif [[ ($main_command = "status") ]]; then
         agogo-status
-    elif [[ ($main_command == "add") ]]; then
+    elif [[ ($main_command = "add") ]]; then
         agogo-add "$@"
-    elif [[ ($main_command == "remove") ]]; then
+    elif [[ ($main_command = "remove") ]]; then
         agogo-remove "$@"
     else
         # if all else fails, we complain
