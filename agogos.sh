@@ -62,6 +62,10 @@ agogo-workspace-info-file() {
     echo "userdata/ws-${1}.agogo"
 }
 
+agogo-kill-session() {
+    rm "$(agogo-current-session-file)"
+}
+
 # BOOLEAN for checking workplace existence
 agogo-workspace-exists() {
     grep -qE ^"${1}"$ "$(agogo-workspaces-list-file)"
@@ -125,8 +129,7 @@ agogo-clockoff() {
 
     # Double check with the user
     if (agogo-confirm-prompt "This will terminate all agogo processes."); then
-        rm "$(agogo-current-session-file)"
-        agogo-print "TODO complete clockoff logic"
+        agogo-kill-session
     else
         agogo-print "Clockoff aborted; agogo is still running"
     fi
@@ -172,11 +175,16 @@ agogo-mainloop() {
     #       increment the ages (and recalculate the scores
     #local testarray="$(agogo-get-projects "${ws}")"
     #echo "${testarray}"
-    
-    agogo-choose-project "${ws}"
+     
+    local timecheck=0
 
-    zenity --info --text="test message" & 
-    sleep 1000
+    while $(agogo-is-running); do
+        local currentProject="$(agogo-choose-project "${ws}")"
+        zenity --info --text="time to work on project '${currentProject}'"
+        sleep 10
+    done
+    
+    exit 0
 }
 
 agogo-get-scores() {
