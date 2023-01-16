@@ -180,8 +180,9 @@ agogo-mainloop() {
 
     while $(agogo-is-running); do
         local currentProject="$(agogo-choose-project "${ws}")"
-        zenity --info --text="time to work on project '${currentProject}'"
-        sleep 10
+        zenity --info --width=800 --height=600 --text="time to work on project '${currentProject}'"
+        sleep 3000
+        agogo-set-score "${ws}" "${currentProject}" 0
         agogo-increment-scores "${ws}"
     done
     
@@ -260,10 +261,10 @@ agogo-choose-project() {
     local ws="${1}"
     readarray -t projects < <(agogo-get-projects "${ws}")
     readarray -t scores   < <(agogo-get-scores "${ws}")
-    agogo-print "there are ${#projects[@]} projects and ${#scores[@]} scores to choose from"
+    #agogo-print "there are ${#projects[@]} projects and ${#scores[@]} scores to choose from"
 
     if [[ ${projects[0]} = "" ]]; then
-        agogo-print " there are no projects to choose from "
+        #agogo-print " there are no projects to choose from "
         echo ""
     else
         local totScore=0
@@ -275,11 +276,11 @@ agogo-choose-project() {
 
         for ((i=0; i<${#scores[@]}; i++)); do
             local s=${scores[${i}]}
-            agogo-print "looking at element ${i}: project ${projects[${i}]} with score ${scores[${i}]} ; remaining
-            threshold is ${threshold}"
+            #agogo-print "looking at element ${i}: project ${projects[${i}]} with score ${scores[${i}]} ; remaining
+            #threshold is ${threshold}"
             if [[ ${threshold} -lt ${s} ]]; then
                 local chosen=${i}
-                agogo-print "chose index ${chosen}"
+                #agogo-print "chose index ${chosen}"
                 break
             fi
             threshold=$((threshold-s))
