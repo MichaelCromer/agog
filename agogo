@@ -1,0 +1,295 @@
+#!/usr/bin/env bash
+
+#   
+#    ###     ###     ###     ###     ###   
+#   ## ##   #   #   #   #   #   #   #   #  
+#   #   #   #       #   #   #       #   #
+#   #####   #  ##   #   #   #  ##   #   #  
+#   #   #   #   #   #   #   #   #   #   #  
+#   #   #    ## #    ###     ## #    ###   
+#   
+
+# ----------------------------------------------------------
+
+# Agogo by Michael Cromer
+
+# Usage:
+
+#   agogo
+#     main agogo function
+
+#   agogo-status
+#     show the current workspace and the current task (if any)
+
+#   agogo-list
+#     lists all the workspaces, indicating the current one, and its tasks
+
+#   agogo-clockon
+#     activate the specified workspace
+
+#   agogo-clockoff
+#     deactivate all workspaces
+
+#   agogo-create
+#     create a new workspace
+
+#   agogo-destroy
+#     remove a workspace (not reversible!)
+
+#   agogo-add
+#     add a task to the current workspace
+
+#   agogo-remove
+#     remove a task from the current workspace
+
+# ----------------------------------------------------------
+
+# These will catch errors and exit safely
+set -o errexit
+set -o pipefail
+set -o nounset
+
+# Check whether a given workspace exists
+agogo-workspace-exists() {
+  [[ (-e $HOME/.agogo/workspaces/$1) ]];
+}
+
+# Return the current workspace (blank if none)
+agogo-current-workspace() {
+  if agogo-current-exists; then
+    awk '/WORKSPACE/ { print $2 }' "$HOME/.agogo/current"
+  fi
+}
+
+# Check whether a given project exists within the current workspace
+agogo-project-exists() {
+  if agogo-current-exists; then
+    local pj=$1
+    local ws=`agogo-current-workspace`
+    if [[ $(grep -c "$pj" "$HOME/.agogo/workspaces/$ws") -ge 1 ]]; then
+      return 0
+    else
+      return 1
+    fi
+  fi
+  return 1
+}
+
+agogo-current-exists() {
+  [[ (-e $HOME/.agogo/current) ]];
+}
+
+# A custom read with default 'no' response. Argument $1 gives detail to the user
+agogo-confirm-prompt() {
+    agogo-print "${1}"
+    agogo-print ""
+    read -p "Are you sure? [y/N] " -n 1 -r
+    [[ "${REPLY}" =~ ^[Yy]$ ]];
+}
+
+# For printing and piping errors correctly
+agogo-error() {
+    printf "\nagogo-error: ${*}\n\n" 1>&2
+    exit 1
+}
+
+# For printing to the user properly
+agogo-print() {
+    printf "\n${*}"
+}
+
+# BOOLEAN to yield basic help 
+agogo-help-requested() {
+    [[ ($# -eq 0) || ( "${1-}" =~ ^-+h(elp)?$ ) ]];
+}
+
+# Ensures the file structure is correct
+agogo-verify-setup() {
+  if [[ !(-e $HOME/.agogo) ]]; then
+    mkdir "$HOME/.agogo"
+  fi
+
+  if [[ !(-e $HOME/.agogo/workspaces) ]]; then
+    mkdir "$HOME/.agogo/workspaces"
+  fi
+}
+
+# Create a workspace with the specified name
+agogo-create() {
+  local ws=$1
+
+  if agogo-workspace-exists $ws; then
+    agogo-error "Workspace $ws already exists!"
+  fi
+
+  touch "$HOME/.agogo/workspaces/$ws"
+  agogo-print "Successfully created workspace '$ws'"
+}
+
+# Destroy the workspace with the specified name
+agogo-destroy() {
+  local ws=$1
+
+  if !(agogo-workspace-exists $ws); then
+    agogo-error "Workspace $ws does not exist!"
+  fi
+
+  agogo-confirm-prompt "This will permanently destroy workspace $ws and all its projects. This cannot be undone"
+
+  if [[ $ws==`agogo-current-workspace` ]]; then 
+    agogo-clockoff
+  fi
+  rm "$HOME/.agogo/workspaces/$ws"
+  agogo-print "Successfully destroyed workspace $ws"
+}
+
+# Show the current state of the workspace
+agogo-list() {
+  agogo-print "WORKSPACES: "
+  agogo-print `ls "$HOME/.agogo/workspaces" `
+
+  if agogo-current-exists; then
+    local ws=$(agogo-current-workspace)
+
+    agogo-print "-------------"
+    agogo-print "CURRENT WORKSPACE: \n\t$ws"
+    
+    agogo-print "PROJECTS:\n"
+    agogo-print "\t Name \t Tot. mins \t Weight\n"
+    awk '{ print "\t  " $1 "\t  " $2 "\t\t  " $3}' "$HOME/.agogo/workspaces/$ws"
+    agogo-print "-------------"
+  fi
+}
+
+agogo-clockon() {
+  local ws=$1
+
+  if !(agogo-workspace-exists $ws); then
+    agogo-error "Workspace $ws does not exist!"
+  fi
+
+  echo "WORKSPACE $ws" > $HOME/.agogo/current
+  agogo-print "Successfully clocked on to workspace $ws"
+}
+
+agogo-clockoff() {
+  if !(agogo-current-exists); then
+    agogo-error "Already clocked off!"
+  fi
+
+  local ws=`agogo-current-workspace`
+  rm $HOME/.agogo/current
+  agogo-print "Successfully clocked off workspace $ws"
+}
+
+agogo-status() {
+  if agogo-current-exists; then
+    agogo-print "Currently clocked on to workspace:"
+    agogo-print `agogo-current-workspace`
+  else
+    agogo-print "Not clocked on to any workspace"
+  fi
+}
+
+agogo-add() {
+  local pj=$1
+
+  if !(agogo-current-exists); then 
+    agogo-error "Cannot add project; not currently clocked on to any workspace!"
+  fi
+
+  local ws=`agogo-current-workspace`
+  if agogo-project-exists $pj; then
+    agogo-error "Project '$pj' already exists on workspace $ws!"
+  fi
+
+  echo "$pj 1 1" >> "$HOME/.agogo/workspaces/$ws"
+  agogo-print "Successfully created project '$pj' on workspace $ws."
+}
+
+agogo-remove() {
+  local pj=$1
+
+  if !(agogo-current-exists); then 
+    agogo-error "Cannot remove project; not currently clocked on to any workspace!"
+  fi
+
+  local ws=`agogo-current-workspace`
+  if !(agogo-project-exists $pj); then
+    agogo-error "Project '$pj' does not exist on workspace $ws!"
+  fi
+  
+  agogo-confirm-prompt "This will permanently remove project $pj from workspace $ws. This cannot be undone."
+  sed -i "/$pj/d" "$HOME/.agogo/workspaces/$ws" 
+  agogo-print "Successfully removed project $pj from workspace $ws."
+}
+
+agogo-log() {
+  local t=$1
+  local pj=$2
+
+  if !(agogo-current-exists) then
+    agogo-error "Cannot log time; not currently clocked on to any workspace!"
+  fi
+
+  local ws=$(agogo-current-workspace)
+
+  if !(agogo-project-exists $pj); then
+    agogo-error "Cannot log time; project '$pj' does not exist on workspace $ws!"
+  fi
+  
+  awk -v t=$t -v pj=$pj \
+    '($1 == pj) \
+      { print $1 " "$2+t " " 1 } \
+    ($1 != pj) \
+      { print $1 " " $2 " " $3+t }' \
+    "$HOME/.agogo/workspaces/$ws" > "$HOME/.agogo/tmp"
+
+  cat "$HOME/.agogo/tmp" > "$HOME/.agogo/workspaces/$ws" 
+  rm "$HOME/.agogo/tmp" 
+
+  agogo-print "Successfully logged $t minutes on project $pj."
+}
+
+main() {
+  # Check that all the required files are in place
+  agogo-verify-setup
+
+  # We catch some floundering around with args, and certain flags
+  if agogo-help-requested "$@"; then
+    agogo-help
+  fi
+
+  # Otherwise we check for a proper use case
+  local main_command=$1
+  shift
+  if  [[ ($main_command = "help") ]]; then
+    agogo-help "$@"
+  elif [[ ($main_command = "clockon") ]]; then
+    agogo-clockon "$@"
+  elif [[ ($main_command = "clockoff") ]]; then
+    agogo-clockoff
+  elif [[ ($main_command = "create") ]]; then
+    agogo-create "$@"
+  elif [[ ($main_command = "destroy") ]]; then
+    agogo-destroy "$@"
+  elif [[ ($main_command = "list") ]]; then
+    agogo-list "$@"
+  elif [[ ($main_command = "status") ]]; then
+    agogo-status
+  elif [[ ($main_command = "add") ]]; then
+    agogo-add "$@"
+  elif [[ ($main_command = "remove") ]]; then
+    agogo-remove "$@"
+  elif [[ ($main_command = "log") ]]; then
+    agogo-log "$@"
+  else
+    # if all else fails, complain
+    agogo-print "Not a recognised agogo command. Try 'agogo -h', or 'agogo --help' for a list of commands."
+  fi
+  agogo-print ""
+  exit 0
+}
+
+main "$@"
+
