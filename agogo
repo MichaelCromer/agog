@@ -56,33 +56,37 @@ agogo-random() {
   echo $(($RANDOM % $1))
 }
 
+agogo-filepath() {
+  echo "$HOME/.agogo"
+}
+
 # Check whether a given workspace exists
 agogo-workspace-exists() {
-  [[ (-e $HOME/.agogo/workspaces/$1) ]];
+  [[ (-e $(agogo-filepath)/workspaces/$1) ]];
 }
 
 # Check whether there is a clockon session
 agogo-current-exists() {
-  [[ (-e $HOME/.agogo/current) ]];
+  [[ (-e $(agogo-filepath)/current) ]];
 }
 
 # Return the current workspace (blank if none)
 agogo-current-workspace() {
   if agogo-current-exists; then
-    awk '/WORKSPACE/ { print $2 }' "$HOME/.agogo/current"
+    awk '/WORKSPACE/ { print $2 }' "$(agogo-filepath)/current"
   fi
 }
 
 agogo-current-task() {
   if agogo-current-exists; then
-    awk '/TASK/ { print $2 }' "$HOME/.agogo/current"
+    awk '/TASK/ { print $2 }' "$(agogo-filepath)/current"
   fi
 }
 
 agogo-current-filepath() {
   if agogo-current-exists; then
     local ws=$(agogo-current-workspace)
-    echo "$HOME/.agogo/workspaces/$ws"
+    echo "$(agogo-filepath)/workspaces/$ws"
   fi
 }
 
@@ -90,7 +94,7 @@ agogo-current-filepath() {
 agogo-task-exists() {
   if agogo-current-exists; then
     local pj=$1
-    local ws=`agogo-current-workspace`
+    local ws=$(agogo-current-workspace)
     if [[ $(grep -c "$pj" $(agogo-current-filepath)) -ge 1 ]]; then
       return 0
     else
@@ -102,40 +106,134 @@ agogo-task-exists() {
 
 # A custom read with default 'no' response. Argument $1 gives detail to the user
 agogo-confirm-prompt() {
-    agogo-print "${1}"
-    agogo-print ""
-    read -p "Are you sure? [y/N] " -n 1 -r
-    [[ "${REPLY}" =~ ^[Yy]$ ]];
+  agogo-print "${1}"
+  agogo-print ""
+  read -p "Are you sure? [y/N] " -n 1 -r
+  [[ "${REPLY}" =~ ^[Yy]$ ]];
 }
 
 # For printing and piping errors correctly
 agogo-error() {
-    printf "\nagogo-error: ${*}\n\n" 1>&2
-    exit 1
+  printf "\nagogo-error: ${*}\n\n" 1>&2
+  exit 1
 }
 
 # For printing to the user 
 agogo-print() {
-    printf "\n${*}"
+  printf "\n${*}"
 }
 
 # Check if the user has requested any help
 agogo-help-requested() {
-    [[ ($# -eq 0) || ( "${1-}" =~ ^-*h(elp)?$ ) ]];
+  [[ ($# -eq 0) || ( "${1-}" =~ ^-*h(elp)?$ ) ]];
+}
+
+agogo-info-requested() {
+  [[ ( "${1-}" =~ ^-*i(nfo)?$ ) ]];
 }
 
 agogo-help() {
-  cat ./helpfiles/basic.agogo
+  echo """
+################################################################################
+--------------------------------------------------------------------------------
+Usage: 
+  
+  agogo [--version] [--help] [--info] <command> <args>
+
+--------------------------------------------------------------------------------
+Synopsis:
+
+  Help partition time between tasks in a way that is fair to all of them.
+
+--------------------------------------------------------------------------------
+Available commands:
+
+  basic flags
+    -h, --help      Show this help and exit
+    -v, --version   Show the version number
+    --info          Explain 'agogo'
+
+  management and information
+    list            List all workspaces, and all tasks of active workspace
+    status          Display active workspace and current task
+
+  operate on workspaces
+    create          Create a new workspace
+    clockon         Activate the selected workspace
+    clockoff        Deactivate the currently active workspace
+    destroy         Destroy a workspace (irreversible!)
+
+  operate on tasks
+    add             Add a task to the active workspace
+    log             Log time (in minutes) to a specified task
+    choose          Select a new active task at random, preferring stale tasks
+    rm, remove      Remove a task from the active workspace (irreversible!)
+
+--------------------------------------------------------------------------------
+################################################################################
+"""
+}
+
+agogo-info() {
+  echo """
+################################################################################
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+--------------------------------------------------------------------------------
+ἀγωγός - agōgós - /a.ɡɔː.ɡós/
+    adjective, m or f; second declension (Attic Greek)
+    1. leading, guiding
+    2. (masc. substantive) guide, escort
+    3. (with πρός or ἐπί) leading to
+    4. drawing, attracting
+    5. eliciting, evoking
+--------------------------------------------------------------------------------
+agogô
+    noun, m (Portuguese < Yoruba)
+    1. percussion instrument consisting of two or three small conical bells
+--------------------------------------------------------------------------------
+à gogo 
+    adverb (French)
+    1. in abundance, galore
+--------------------------------------------------------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+--------------------------------------------------------------------------------
+A *pedagogue* is a teacher, especially a strict or pedantic one. It derives in
+part from the Attic ἀγωγός, with the sense of "leading" or "guiding".
+
+Do you sometimes reflect upon your time in high school and consider that,
+despite any *other* evils of that place, the timetable system was highly
+effective at getting information into your head? If only you could recapture
+that structure for yourself - rigid blocks of time, with clear topics, scattered
+almost uniformly at random through your week.
+
+Even if you have the discipline to commit to one particular topic at a time, do
+you have the arbitrary disregard for human feelings of an automated timetabling
+system? (Don't answer that). How do you sprinkle your workdays evenly with all
+the things you need to do? How can you fairly choose what to do next?
+
+Agogo is here to help. Create a workspace and add tasks to it. When you are
+clocked on to a workspace, you can ask agogo to choose a task. You will then be
+presented with a randomly task. Agogo prefers to select tasks that you have not
+worked on for a while. Record the time spent (in minutes) on any of the tasks in
+the workspace to ensure that agogo knows the current state of play.
+
+Hopefully your guilt and feeling of hopelessness over your abundance of tasks
+galore will soon abate.
+
+--------------------------------------------------------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+################################################################################
+"""
 }
 
 # Ensures the file structure is correct
 agogo-verify-setup() {
-  if [[ !(-e $HOME/.agogo) ]]; then
-    mkdir "$HOME/.agogo"
+  if [[ !(-e $(agogo-filepath)) ]]; then
+    mkdir "$(agogo-filepath)"
   fi
 
-  if [[ !(-e $HOME/.agogo/workspaces) ]]; then
-    mkdir "$HOME/.agogo/workspaces"
+  if [[ !(-e $(agogo-filepath)/workspaces) ]]; then
+    mkdir "$(agogo-filepath)/workspaces"
   fi
 }
 
@@ -161,17 +259,17 @@ agogo-destroy() {
 
   agogo-confirm-prompt "This will permanently destroy workspace $ws and all its tasks. This cannot be undone"
 
-  if [[ $ws==`agogo-current-workspace` ]]; then 
+  if [[ "$ws" == "$(agogo-current-workspace)" ]]; then 
     agogo-clockoff
   fi
-  rm $(agogo-current-filepath)
+  rm "$(agogo-filepath)/workspaces/$ws"
   agogo-print "Successfully destroyed workspace $ws"
 }
 
 # Show the current state of the workspace
 agogo-list() {
   agogo-print "WORKSPACES: "
-  agogo-print `ls "$HOME/.agogo/workspaces" `
+  agogo-print `ls "$(agogo-filepath)/workspaces" `
 
   if agogo-current-exists; then
     local ws=$(agogo-current-workspace)
@@ -193,7 +291,7 @@ agogo-clockon() {
     agogo-error "Workspace $ws does not exist!"
   fi
 
-  echo "WORKSPACE $ws" > $HOME/.agogo/current
+  echo "WORKSPACE $ws" > $(agogo-filepath)/current
   agogo-print "Successfully clocked on to workspace $ws"
 }
 
@@ -203,7 +301,7 @@ agogo-clockoff() {
   fi
 
   local ws=`agogo-current-workspace`
-  rm $HOME/.agogo/current
+  rm $(agogo-filepath)/current
   agogo-print "Successfully clocked off workspace $ws"
 }
 
@@ -271,10 +369,10 @@ agogo-log() {
       { print $1 " "$2+t " " 1 } \
     ($1 != pj) \
       { print $1 " " $2 " " $3+t }' \
-    $(agogo-current-filepath) > "$HOME/.agogo/tmp"
+    $(agogo-current-filepath) > "$(agogo-filepath)/tmp"
 
-  cat "$HOME/.agogo/tmp" > $(agogo-current-filepath) 
-  rm "$HOME/.agogo/tmp" 
+  cat "$(agogo-filepath)/tmp" > $(agogo-current-filepath) 
+  rm "$(agogo-filepath)/tmp" 
 
   agogo-print "Successfully logged $t minutes on task $pj."
 }
@@ -289,8 +387,8 @@ agogo-choose() {
   echo "Random variable $r echo from total weighting $T"
   local pj=$(awk -v r=$r '{if (r < $3) { print $1; exit } else { r-=$3 }}' $(agogo-current-filepath))
   
-  sed -i "/TASK/d" "$HOME/.agogo/current"
-  echo "TASK $pj" >> "$HOME/.agogo/current"
+  sed -i "/TASK/d" "$(agogo-filepath)/current"
+  echo "TASK $pj" >> "$(agogo-filepath)/current"
   agogo-print "Agogo has chosen the following task for you:"
   agogo-print "\t $pj"
 }
@@ -302,6 +400,11 @@ main() {
   # We catch some floundering around with args, and certain flags
   if agogo-help-requested "$@"; then
     agogo-help
+    exit 0
+  fi
+
+  if agogo-info-requested "$@"; then
+    agogo-info
     exit 0
   fi
 
@@ -322,7 +425,7 @@ main() {
     agogo-status
   elif [[ ($main_command = "add") ]]; then
     agogo-add "$@"
-  elif [[ ($main_command = "remove") ]]; then
+  elif [[ ($main_command = "remove")||($main_command = "rm") ]]; then
     agogo-remove "$@"
   elif [[ ($main_command = "log") ]]; then
     agogo-log "$@"
