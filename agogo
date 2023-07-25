@@ -83,19 +83,12 @@ agogo-current-task() {
   fi
 }
 
-agogo-current-filepath() {
-  if agogo-current-exists; then
-    local ws=$(agogo-current-workspace)
-    echo "$(agogo-filepath)/workspaces/$ws"
-  fi
-}
-
 # Check whether a given task exists within the current workspace
 agogo-task-exists() {
   if agogo-current-exists; then
     local pj=$1
     local ws=$(agogo-current-workspace)
-    if [[ $(grep -c "$pj" $(agogo-current-filepath)) -ge 1 ]]; then
+    if [[ $(grep -c "$pj" "$(agogo-filepath)/current") -ge 1 ]]; then
       return 0
     else
       return 1
@@ -279,7 +272,7 @@ agogo-list() {
     
     agogo-print "PROJECTS:"
     agogo-print "\t Name \t Tot. mins \t Weight\n"
-    awk '{ print "\t  " $1 "\t  " $2 "\t\t  " $3}' $(agogo-current-filepath)
+    awk '{ print "\t  " $1 "\t  " $2 "\t\t  " $3}' "$(agogo-filepath)/workspaces/$ws"
     agogo-print "-------------"
   fi
 }
@@ -329,7 +322,7 @@ agogo-add() {
     agogo-error "Project '$pj' already exists on workspace $ws!"
   fi
 
-  echo "$pj 1 1" >> $(agogo-current-filepath)
+  echo "$pj 1 1" >> "$(agogo-filepath)/current"
   agogo-print "Successfully created task '$pj' on workspace $ws."
 }
 
@@ -346,7 +339,7 @@ agogo-remove() {
   fi
   
   agogo-confirm-prompt "This will permanently remove task $pj from workspace $ws. This cannot be undone."
-  sed -i "/$pj/d" $(agogo-current-filepath) 
+  sed -i "/$pj/d" "$(agogo-filepath)/current" 
   agogo-print "Successfully removed task $pj from workspace $ws."
 }
 
@@ -369,9 +362,9 @@ agogo-log() {
       { print $1 " "$2+t " " 1 } \
     ($1 != pj) \
       { print $1 " " $2 " " $3+t }' \
-    $(agogo-current-filepath) > "$(agogo-filepath)/tmp"
+    "$(agogo-filepath)/current" > "$(agogo-filepath)/tmp"
 
-  cat "$(agogo-filepath)/tmp" > $(agogo-current-filepath) 
+  cat "$(agogo-filepath)/tmp" > "$(agogo-filepath)/current" 
   rm "$(agogo-filepath)/tmp" 
 
   agogo-print "Successfully logged $t minutes on task $pj."
@@ -382,9 +375,9 @@ agogo-choose() {
     agogo-error "Cannot choose task; not currently clocked on!"
   fi
   
-  local T=$(awk '{ T+=$2 } END { print T }' $(agogo-current-filepath))
+  local T=$(awk '{ T+=$2 } END { print T }' "$(agogo-filepath)/current")
   local r=$(agogo-random $T)
-  local pj=$(awk -v r=$r '{if (r < $3) { print $1; exit } else { r-=$3 }}' $(agogo-current-filepath))
+  local pj=$(awk -v r=$r '{if (r < $3) { print $1; exit } else { r-=$3 }}' "$(agogo-filepath)/current")
   
   sed -i "/TASK/d" "$(agogo-filepath)/current"
   echo "TASK $pj" >> "$(agogo-filepath)/current"
