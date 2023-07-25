@@ -384,7 +384,6 @@ agogo-choose() {
   
   local T=$(awk '{ T+=$2 } END { print T }' $(agogo-current-filepath))
   local r=$(agogo-random $T)
-  echo "Random variable $r echo from total weighting $T"
   local pj=$(awk -v r=$r '{if (r < $3) { print $1; exit } else { r-=$3 }}' $(agogo-current-filepath))
   
   sed -i "/TASK/d" "$(agogo-filepath)/current"
