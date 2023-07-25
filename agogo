@@ -245,7 +245,7 @@ agogo-create() {
     agogo-error "Workspace $ws already exists!"
   fi
 
-  touch $(agogo-current-filepath)
+  touch "$(agogo-filepath)/workspaces/$ws"
   agogo-print "Successfully created workspace '$ws'"
 }
 
