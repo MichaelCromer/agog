@@ -60,14 +60,28 @@ agogo-filepath() {
   echo "$HOME/.agogo"
 }
 
+# Check whether there is a clockon session
+agogo-current-exists() {
+  [[ (-e $(agogo-filepath)/current) ]];
+}
+
 # Check whether a given workspace exists
 agogo-workspace-exists() {
   [[ (-e $(agogo-filepath)/workspaces/$1) ]];
 }
 
-# Check whether there is a clockon session
-agogo-current-exists() {
-  [[ (-e $(agogo-filepath)/current) ]];
+# Check whether a given task exists within the current workspace
+agogo-task-exists() {
+  local ws=$1
+  local pj=$2
+  if agogo-current-exists; then
+    if [[ (-e "$(agogo-filepath)/workspaces/$ws/$pj") ]]; then
+      return 0
+    else
+      return 1
+    fi
+  fi
+  return 1
 }
 
 # Return the current workspace (blank if none)
@@ -83,18 +97,25 @@ agogo-current-task() {
   fi
 }
 
-# Check whether a given task exists within the current workspace
-agogo-task-exists() {
-  if agogo-current-exists; then
-    local pj=$1
-    local ws=$(agogo-current-workspace)
-    if [[ $(grep -c "$pj" "$(agogo-filepath)/current") -ge 1 ]]; then
-      return 0
-    else
-      return 1
-    fi
+agogo-verify-current() {
+  if !(agogo-current-exists) then
+    agogo-error "Cannot perform action; not currently clocked on!"
   fi
-  return 1
+}
+
+agogo-verify-workspace() {
+  local ws=$1
+  if !(agogo-workspace-exists $ws); then
+    agogo-error "Workspace $ws does not exist!"
+  fi
+}
+
+agogo-verify-task() {
+  local ws=$1
+  local pj=$2
+  if !(agogo-task-exists $ws $pj); then
+    agogo-error "Task '$pj' does not exist on workspace $ws!"
+  fi
 }
 
 # A custom read with default 'no' response. Argument $1 gives detail to the user
@@ -238,7 +259,7 @@ agogo-create() {
     agogo-error "Workspace $ws already exists!"
   fi
 
-  touch "$(agogo-filepath)/workspaces/$ws"
+  mkdir "$(agogo-filepath)/workspaces/$ws"
   agogo-print "Successfully created workspace '$ws'"
 }
 
@@ -246,33 +267,38 @@ agogo-create() {
 agogo-destroy() {
   local ws=$1
 
-  if !(agogo-workspace-exists $ws); then
-    agogo-error "Workspace $ws does not exist!"
-  fi
+  agogo-verify-workspace $ws
 
-  agogo-confirm-prompt "This will permanently destroy workspace $ws and all its tasks. This cannot be undone"
+  agogo-confirm-prompt "This will permanently destroy workspace $ws and all its tasks. \
+    !This cannot be undone!"
 
   if [[ "$ws" == "$(agogo-current-workspace)" ]]; then 
     agogo-clockoff
   fi
-  rm "$(agogo-filepath)/workspaces/$ws"
+  rm -f "$(agogo-filepath)/workspaces/$ws/*"
+  rmdir "$(agogo-filepath)/workspaces/$ws" #just to make it obvious what's a dir and what is not
   agogo-print "Successfully destroyed workspace $ws"
 }
 
 # Show the current state of the workspace
 agogo-list() {
   agogo-print "WORKSPACES: "
-  agogo-print `ls "$(agogo-filepath)/workspaces" `
+  agogo-print $(ls "$(agogo-filepath)/workspaces")
 
   if agogo-current-exists; then
     local ws=$(agogo-current-workspace)
+    local pth=
 
     agogo-print "-------------"
     agogo-print "CURRENT WORKSPACE: \n\t$ws"
     
     agogo-print "PROJECTS:"
     agogo-print "\t Name \t Tot. mins \t Weight\n"
-    awk '{ print "\t  " $1 "\t  " $2 "\t\t  " $3}' "$(agogo-filepath)/workspaces/$ws"
+    for file in "$(agogo-filepath)/workspaces/$ws/"*; do
+      local fname=$(echo "$file" | sed 's/.*\///')
+      local fdata=$(awk 'BEGIN { FS = "\n" ; RS = "" ; OFS = "\t" } { print $1,$2 }' <$file)
+      agogo-print "$fname $fdata"
+    done
     agogo-print "-------------"
   fi
 }
@@ -280,18 +306,14 @@ agogo-list() {
 agogo-clockon() {
   local ws=$1
 
-  if !(agogo-workspace-exists $ws); then
-    agogo-error "Workspace $ws does not exist!"
-  fi
+  agogo-verify-workspace $ws
 
   echo "WORKSPACE $ws" > $(agogo-filepath)/current
   agogo-print "Successfully clocked on to workspace $ws"
 }
 
 agogo-clockoff() {
-  if !(agogo-current-exists); then
-    agogo-error "Already clocked off!"
-  fi
+  agogo-verify-current
 
   local ws=`agogo-current-workspace`
   rm $(agogo-filepath)/current
@@ -313,33 +335,33 @@ agogo-status() {
 agogo-add() {
   local pj=$1
 
-  if !(agogo-current-exists); then 
-    agogo-error "Cannot add task; not currently clocked on to any workspace!"
-  fi
+  agogo-verify-current
 
-  local ws=`agogo-current-workspace`
-  if agogo-task-exists $pj; then
+  local ws=$(agogo-current-workspace)
+  if agogo-task-exists $ws $pj; then
     agogo-error "Project '$pj' already exists on workspace $ws!"
   fi
 
-  echo "$pj 1 1" >> "$(agogo-filepath)/current"
+  local pth="$(agogo-filepath)/workspaces/$ws/$pj"
+  touch $pth
+  echo 0 >> $pth # total age
+  echo 0 >> $pth # total weighting
+  echo 1 >> $pth # importance level
   agogo-print "Successfully created task '$pj' on workspace $ws."
 }
 
 agogo-remove() {
   local pj=$1
 
-  if !(agogo-current-exists); then 
-    agogo-error "Cannot remove task; not currently clocked on to any workspace!"
-  fi
+  agogo-verify-current
 
-  local ws=`agogo-current-workspace`
-  if !(agogo-task-exists $pj); then
+  local ws=$(agogo-current-workspace)
+  if !(agogo-task-exists $ws $pj); then
     agogo-error "Project '$pj' does not exist on workspace $ws!"
   fi
   
   agogo-confirm-prompt "This will permanently remove task $pj from workspace $ws. This cannot be undone."
-  sed -i "/$pj/d" "$(agogo-filepath)/current" 
+  rm -f "$(agogo-filepath)/workspaces/$ws/$pj"
   agogo-print "Successfully removed task $pj from workspace $ws."
 }
 
@@ -347,37 +369,65 @@ agogo-log() {
   local t=$1
   local pj=$2
 
-  if !(agogo-current-exists) then
-    agogo-error "Cannot log time; not currently clocked on!"
-  fi
+  agogo-verify-current
 
   local ws=$(agogo-current-workspace)
 
-  if !(agogo-task-exists $pj); then
-    agogo-error "Cannot log time; task '$pj' does not exist on workspace $ws!"
+  agogo-verify-task $ws $pj
+  
+  local N=$(ls "$(agogo-filepath)/workspaces/$ws" | wc -l )
+  local pth="$(agogo-filepath)/workspaces/$ws"
+
+  # Log the time directly in the case that there is only one task
+  if [[ $N -eq 1 ]]; then
+    awk -v t=$t 'BEGIN { FS = "\n" ; RS = "" ; OFS = "\n" }\
+      ($2 > t) { print $1+t,$2-t,$3 }
+      ($2 <= t) { print $1+t,0,$3}' <"$pth/$pj" >"$(agogo-filepath)/.tmp"
+    cat "$(agogo-filepath)/.tmp" > "$pth/$pj"
+    rm "$(agogo-filepath)/.tmp" 
+    agogo-print "Successfully logged $t minutes on task $pj."
+    exit 0
   fi
   
-  awk -v t=$t -v pj=$pj \
-    '($1 == pj) \
-      { print $1 " "$2+t " " 1 } \
-    ($1 != pj) \
-      { print $1 " " $2 " " $3+t }' \
-    "$(agogo-filepath)/current" > "$(agogo-filepath)/tmp"
-
-  cat "$(agogo-filepath)/tmp" > "$(agogo-filepath)/current" 
-  rm "$(agogo-filepath)/tmp" 
+  # Log the time cleverly if there is more than one task
+  for file in "$pth/"*; do
+    if [[ "$file" == "$pth/$pj" ]]; then
+      awk -v t=$t 'BEGIN { FS = "\n" ; RS = "" ; OFS = "\n" }\
+        ($2 > t) { print $1+t,$2-t,$3 }\
+        ($2 <= t) { print $1+t,0,$3}' <"$file" >"$(agogo-filepath)/.tmp"
+      cat "$(agogo-filepath)/.tmp" > "$file"
+      rm "$(agogo-filepath)/.tmp" 
+    else
+      awk -v t=$t -v N=$N 'BEGIN { FS = "\n" ; RS = "" ; OFS = "\n" }\
+        { print $1,$2+(t/(N-1)),$3 }' <"$file" >"$(agogo-filepath)/.tmp"
+      cat "$(agogo-filepath)/.tmp" > "$file"
+      rm "$(agogo-filepath)/.tmp" 
+    fi
+  done
 
   agogo-print "Successfully logged $t minutes on task $pj."
 }
 
 agogo-choose() {
-  if !(agogo-current-exists); then
-    agogo-error "Cannot choose task; not currently clocked on!"
+  agogo-verify-current
+
+  local ws="$(agogo-current-workspace)"
+  local pth="$(agogo-filepath)/workspaces/$ws"
+  local N=$(ls "$pth" | wc -l )
+
+  if [[ $N -eq 0 ]]; then
+    agogo-error "There are no tasks to choose; workspace $ws is empty."
   fi
-  
-  local T=$(awk '{ T+=$2 } END { print T }' "$(agogo-filepath)/current")
-  local r=$(agogo-random $T)
-  local pj=$(awk -v r=$r '{if (r < $3) { print $1; exit } else { r-=$3 }}' "$(agogo-filepath)/current")
+
+  local data=$( ls "$pth" | xargs awk 'BEGIN { FS="\n"; RS="" } { print FILENAME, $2 }')
+  local T=$( echo "$data" | awk '{ T+=$2 } END { print T }' )
+  if [[ $T -eq 0 ]]; then
+    local r=$(agogo-random $N)
+    local pj=$(echo "$data" | awk -v r=$r '{if (r < $2) { print $1; exit } else { r-=1 }}')
+  else
+    local r=$(agogo-random $T)
+    local pj=$(echo "$data" | awk -v r=$r '{if (r < $2) { print $1; exit } else { r-=$2 }}')
+  fi
   
   sed -i "/TASK/d" "$(agogo-filepath)/current"
   echo "TASK $pj" >> "$(agogo-filepath)/current"
