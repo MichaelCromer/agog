@@ -419,14 +419,14 @@ agogo-choose() {
     agogo-error "There are no tasks to choose; workspace $ws is empty."
   fi
 
-  local data=$( ls "$pth" | xargs awk 'BEGIN { FS="\n"; RS="" } { print FILENAME, $2 }')
+  local data=$( echo $pth/* | xargs awk 'BEGIN { FS="\n"; RS="" } { print FILENAME, $2 }')
   local T=$( echo "$data" | awk '{ T+=$2 } END { print T }' )
   if [[ $T -eq 0 ]]; then
     local r=$(agogo-random $N)
-    local pj=$(echo "$data" | awk -v r=$r '{if (r < $2) { print $1; exit } else { r-=1 }}')
+    local pj=$(echo "$data" | awk -v r=$r '{if (r < 1) { print $1; exit } else { r-=1 }}' | sed 's/.*\///')
   else
     local r=$(agogo-random $T)
-    local pj=$(echo "$data" | awk -v r=$r '{if (r < $2) { print $1; exit } else { r-=$2 }}')
+    local pj=$(echo "$data" | awk -v r=$r '{if (r < $2) { print $1; exit } else { r-=$2 }}'| sed 's/.*\///')
   fi
   
   sed -i "/TASK/d" "$(agogo-filepath)/current"
