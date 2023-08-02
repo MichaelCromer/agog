@@ -282,23 +282,25 @@ agogo-destroy() {
 
 # Show the current state of the workspace
 agogo-list() {
-  agogo-print "WORKSPACES: "
-  agogo-print $(ls "$(agogo-filepath)/workspaces")
+  agogo-print "  WORKSPACES: "
+  agogo-print "    $(ls "$(agogo-filepath)/workspaces")"
 
   if agogo-current-exists; then
     local ws=$(agogo-current-workspace)
-    local pth=
 
     agogo-print "-------------"
-    agogo-print "CURRENT WORKSPACE: \n\t$ws"
+    agogo-print "\n  CURRENT WORKSPACE:\n    $ws"
     
-    agogo-print "PROJECTS:"
-    agogo-print "\t Name \t Tot. mins \t Weight\n"
+    agogo-print "\n  PROJECTS:\n"
+    # agogo-print "\t Name \t Tot. mins \t Weight\n"
+    local table="    Name\tTime (m)\tWeight\n"
     for file in "$(agogo-filepath)/workspaces/$ws/"*; do
       local fname=$(echo "$file" | sed 's/.*\///')
-      local fdata=$(awk 'BEGIN { FS = "\n" ; RS = "" ; OFS = "\t" } { print $1,$2 }' <$file)
-      agogo-print "$fname $fdata"
+      local fdata=$(awk 'BEGIN { FS = "\n" ; RS = "" ; OFS = "\t" } { print "  " $1, "  " $2 }' <$file)
+      # agogo-print "$fname $fdata"
+      local table="$table    $fname\t$fdata\n"
     done
+    printf "$table" | column -t -s "$(printf '\t')"
     agogo-print "-------------"
   fi
 }
