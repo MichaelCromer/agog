@@ -57,6 +57,24 @@ agogo-random() {
   echo $(($RANDOM % $1))
 }
 
+# Parse a string in the format XXhYYm or HH:MM as ZZ(min)
+agogo-parse-time() {
+  local in=$(echo $1 | tr 'h' ':' | tr -d 'm')
+
+  if [[ ! "$in" =~ ":" ]]; then
+    local in="0:$in"
+  fi
+
+  local h=$(echo $in | sed 's/:.*//')
+  local m=$(echo $in | sed 's/.*://')
+
+  if [[ ! "$h" =~ [0-9]+ ]] || [[ ! "$m" =~ [0-9]+ ]]; then
+    agogo-error "$1 is not in format HH:MM or XXhYYm"
+  fi
+
+  echo $((60*$h + $m))
+}
+
 # The path for the agogo dotfolder
 agogo-filepath() {
   echo "$HOME/.agogo"
@@ -377,7 +395,7 @@ agogo-remove() {
 }
 
 agogo-log() {
-  local t=$1
+  local t=$(agogo-parse-time "$1")
   local pj=$2
 
   agogo-verify-current
