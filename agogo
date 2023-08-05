@@ -282,13 +282,15 @@ agogo-destroy() {
 
 # Show the current state of the workspace
 agogo-list() {
+  agogo-print "------------------------------------------------------------"
+
   agogo-print "  WORKSPACES: "
   agogo-print "    $(ls "$(agogo-filepath)/workspaces")"
 
+  agogo-print "------------------------------------------------------------"
   if agogo-current-exists; then
     local ws=$(agogo-current-workspace)
 
-    agogo-print "-------------"
     agogo-print "\n  CURRENT WORKSPACE:\n    $ws"
     
     agogo-print "\n  PROJECTS:\n"
@@ -301,7 +303,7 @@ agogo-list() {
       local table="$table    $fname\t$fdata\n"
     done
     printf "$table" | column -t -s "$(printf '\t')"
-    agogo-print "-------------"
+    agogo-print "------------------------------------------------------------"
   fi
 }
 
