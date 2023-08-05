@@ -52,10 +52,12 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
+# A random integer modulo $1
 agogo-random() {
   echo $(($RANDOM % $1))
 }
 
+# The path for the agogo dotfolder
 agogo-filepath() {
   echo "$HOME/.agogo"
 }
@@ -91,18 +93,21 @@ agogo-current-workspace() {
   fi
 }
 
+# Return the currently selected task (blank if none)
 agogo-current-task() {
   if agogo-current-exists; then
     awk '/TASK/ { print $2 }' "$(agogo-filepath)/current"
   fi
 }
 
+# Errors if there is no current agogo clockon session
 agogo-verify-current() {
   if !(agogo-current-exists) then
     agogo-error "Cannot perform action; not currently clocked on!"
   fi
 }
 
+# Errors if $1 is not a workspace
 agogo-verify-workspace() {
   local ws=$1
   if !(agogo-workspace-exists $ws); then
@@ -110,6 +115,7 @@ agogo-verify-workspace() {
   fi
 }
 
+# Errors if $2 is not a task on workspace $1
 agogo-verify-task() {
   local ws=$1
   local pj=$2
@@ -142,6 +148,7 @@ agogo-help-requested() {
   [[ ($# -eq 0) || ( "${1-}" =~ ^-*h(elp)?$ ) ]];
 }
 
+# Check if the user has requested info
 agogo-info-requested() {
   [[ ( "${1-}" =~ ^-*i(nfo)?$ ) ]];
 }
