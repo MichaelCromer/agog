@@ -394,6 +394,23 @@ agogo-remove() {
   agogo-print "Successfully removed task $pj from workspace $ws."
 }
 
+agogo-move() {
+  local pj1=$1
+  local pj2=$2
+
+  agogo-verify-current
+
+  local ws=$(agogo-current-workspace)
+  if !(agogo-task-exists $ws $pj1); then
+    agogo-error "Project '$pj1' does not exist on workspace $ws!"
+  fi
+
+  mv "$(agogo-filepath)/workspaces/$ws/$pj1" "$(agogo-filepath)/workspaces/$ws/$pj2" 
+  agogo-print "Successfully moved task $pj1 to task $pj2."
+}
+
+
+
 agogo-log() {
   local t=$(agogo-parse-time "$1")
   local pj=$2
@@ -498,6 +515,8 @@ main() {
     agogo-add "$@"
   elif [[ ($main_command = "remove")||($main_command = "rm") ]]; then
     agogo-remove "$@"
+  elif [[ ($main_command = "move")||($main_command = "mv") ]]; then
+    agogo-move "$@"
   elif [[ ($main_command = "log") ]]; then
     agogo-log "$@"
   elif [[ ($main_command = "choose") ]]; then
