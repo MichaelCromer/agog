@@ -481,6 +481,29 @@ agogo-choose() {
   agogo-print "\t $pj"
 }
 
+agogo-set() {
+  agogo-verify-current
+  
+  local pj="${!#}"
+  local ws=$(agogo-current-workspace)
+  if !(agogo-task-exists $ws $pj); then
+    agogo-error "Project '$pj' does not exist on workspace $ws!"
+  fi
+  
+  while [ "$#" -gt 1 ]; do
+    case "$1" in
+      -n|--name)
+        agogo-move $pj $2
+        shift 2
+        ;;
+      *)
+        agogo-error "Unknown option $1"
+        ;;
+    esac
+  done
+
+}
+
 main() {
   # Check that all the required files are in place
   agogo-verify-setup
@@ -521,6 +544,8 @@ main() {
     agogo-log "$@"
   elif [[ ($main_command = "choose") ]]; then
     agogo-choose "$@"
+  elif [[ ($main_command = "set") ]]; then
+    agogo-set "$@"
   else
     # if all else fails, complain
     agogo-print "Not a recognised agogo command. Try 'agogo -h' or 'agogo --help' for a list of commands."
