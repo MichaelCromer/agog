@@ -534,7 +534,7 @@ main() {
     agogo-create "$@"
   elif [[ ($main_command = "destroy") ]]; then
     agogo-destroy "$@"
-  elif [[ ($main_command = "list") ]]; then
+  elif [[ ($main_command = "list")||($main_command = "ls") ]]; then
     agogo-list "$@"
   elif [[ ($main_command = "status") ]]; then
     agogo-status
