@@ -368,7 +368,7 @@ agogo-add() {
 
   local ws=$(agogo-current-workspace)
   if agogo-task-exists $ws $pj; then
-    agogo-error "Project '$pj' already exists on workspace $ws!"
+    agogo-error "Task '$pj' already exists on workspace $ws!"
   fi
 
   local pth="$(agogo-filepath)/workspaces/$ws/$pj"
@@ -386,7 +386,7 @@ agogo-remove() {
 
   local ws=$(agogo-current-workspace)
   if !(agogo-task-exists $ws $pj); then
-    agogo-error "Project '$pj' does not exist on workspace $ws!"
+    agogo-error "Task '$pj' does not exist on workspace $ws!"
   fi
   
   agogo-confirm-prompt "This will permanently remove task $pj from workspace $ws. This cannot be undone."
@@ -395,6 +395,10 @@ agogo-remove() {
 }
 
 agogo-move() {
+  if (( $# != 2 )); then
+    agogo-error "Incorrect number of arguments to move."
+  fi
+
   local pj1=$1
   local pj2=$2
 
@@ -402,7 +406,7 @@ agogo-move() {
 
   local ws=$(agogo-current-workspace)
   if !(agogo-task-exists $ws $pj1); then
-    agogo-error "Project '$pj1' does not exist on workspace $ws!"
+    agogo-error "Task '$pj1' does not exist on workspace $ws!"
   fi
 
   mv "$(agogo-filepath)/workspaces/$ws/$pj1" "$(agogo-filepath)/workspaces/$ws/$pj2" 
