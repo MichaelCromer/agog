@@ -42,18 +42,22 @@
 #ifndef AGOGO_H
 #define AGOGO_H
 #define AGOGO_VERSION "0.1"
-#define AGOGO_DIR "$HOME/.agogo"
+#define AGOGO_DIR "/home/mcromer/programming/c/agogo/tmp/agogo"
 #endif
 
 /* ------------------------------------------------------------
  * PROTOTYPES
  * */
 
+// Meta
+void check_setup();
+
 // Help and print
 void print_short_help();
 
 // Primary commands
 int agogo_project(int argc, char *argv[]);
+void agogo_setup();
 
 // Project commands
 void list_projects();
@@ -75,11 +79,41 @@ int main(int argc, char *argv[])
 
   char *first_command = argv[1];
   int exit_code = EXIT_SUCCESS;
+
+  if (strcmp(first_command, "setup") == 0) {
+    // I know this is a silly user experience, but it's just a demo
+    agogo_setup();
+  }
+  check_setup();
+
   if (strcmp(first_command, "project") == 0) {
     exit_code = agogo_project(argc, argv);
   }
 
   return exit_code;
+}
+
+/* ============================================================
+ *  SETUP
+ * ============================================================
+ */
+
+void agogo_setup() {
+  // create the agogo directory
+  int status = system("mkdir -p " AGOGO_DIR);
+  if (status != 0) {
+    printf("Error: Could not create the agogo directory.\n");
+    exit(EXIT_FAILURE);
+  }
+}
+
+void check_setup() {
+  // check that the agogo directory exists
+  int status = system("test -d " AGOGO_DIR);
+  if (status != 0) {
+    printf("Error: Agogo directory not found. Please run `agogo setup` to create the directory.\n");
+    exit(EXIT_FAILURE);
+  }
 }
 
 
@@ -113,7 +147,7 @@ int agogo_project(int argc, char *argv[])
 
   char *sub_command = argv[2];
 
-  if (strcmp(sub_command, "--create") == 0) {
+  if ((strcmp(sub_command, "--create") == 0) || (strcmp(sub_command, "-c") == 0)) {
     if (argc < 4) {
       printf("Error: Missing project name\n");
       return EXIT_FAILURE;
@@ -121,7 +155,7 @@ int agogo_project(int argc, char *argv[])
     create_project(argv[3]);
   }
 
-  if (strcmp(sub_command, "--destroy") == 0) {
+  if ((strcmp(sub_command, "--destroy") == 0) || (strcmp(sub_command, "-d") == 0)) {
     if (argc < 4) {
       printf("Error: Missing project name\n");
       return EXIT_FAILURE;
@@ -139,7 +173,7 @@ void list_projects()
 
 void create_project(char *project_name) 
 {
-  printf("Creating project %s\n", project_name);
+  // create a directory named after the project
 }
 
 void destroy_project(char *project_name) 
