@@ -43,23 +43,22 @@
 #define AGOGO_H
 #define AGOGO_VERSION "0.1"
 #define AGOGO_DIR "/home/mcromer/programming/c/agogo/tmp/agogo"
+#define AGOGO_PROJECTS_DIR AGOGO_DIR "/projects"
 #endif
 
 /* ------------------------------------------------------------
  * PROTOTYPES
  * */
 
-// Meta
+// Setup
+void agogo_setup();
 void check_setup();
 
 // Help and print
 void print_short_help();
 
-// Primary commands
-int agogo_project(int argc, char *argv[]);
-void agogo_setup();
-
 // Project commands
+int agogo_project(int argc, char *argv[]);
 void list_projects();
 void create_project(char *project_name);
 void destroy_project(char *project_name);
@@ -100,7 +99,7 @@ int main(int argc, char *argv[])
 
 void agogo_setup() {
   // create the agogo directory
-  int status = system("mkdir -p " AGOGO_DIR);
+  int status = system("mkdir -p " AGOGO_DIR "/projects");
   if (status != 0) {
     printf("Error: Could not create the agogo directory.\n");
     exit(EXIT_FAILURE);
@@ -173,10 +172,26 @@ void list_projects()
 
 void create_project(char *project_name) 
 {
-  // create a directory named after the project
+  printf("Creating project %s\n", project_name);
+  char *command = strcat("mkdir -p " AGOGO_DIR "/projects/", project_name);
+  int status = system(command);
+
+  if (status != 0) {
+    printf("Error: Could not create the project directory for %s.\n", project_name);
+    exit(EXIT_FAILURE);
+  }
+  free(command);
 }
 
 void destroy_project(char *project_name) 
 {
   printf("Destroying project %s\n", project_name);
+  char *command = strcat("rm -rf " AGOGO_DIR "/projects/", project_name);
+  int status = system(command);
+
+  if (status != 0) {
+    printf("Error: Could not destroy the project directory for %s.\n", project_name);
+    exit(EXIT_FAILURE);
+  }
+  free(command);
 }
