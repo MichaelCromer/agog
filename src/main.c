@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
 
 void agogo_setup() {
   // create the agogo directory
-  int status = system("mkdir -p " AGOGO_DIR "/projects");
+  int status = system("mkdir -p " AGOGO_PROJECTS_DIR);
   if (status != 0) {
     printf("Error: Could not create the agogo directory.\n");
     exit(EXIT_FAILURE);
@@ -168,30 +168,36 @@ int agogo_project(int argc, char *argv[])
 void list_projects() 
 {
   printf("Listing projects\n");
+  int status = system("ls " AGOGO_PROJECTS_DIR);
+
+  if (status != 0) {
+    printf("Error: Could not list the projects.\n");
+    exit(EXIT_FAILURE);
+  }
 }
 
 void create_project(char *project_name) 
 {
   printf("Creating project %s\n", project_name);
-  char *command = strcat("mkdir -p " AGOGO_DIR "/projects/", project_name);
-  int status = system(command);
+  char command[256];
+  snprintf(command, sizeof(command), "mkdir -p " AGOGO_PROJECTS_DIR "/%s", project_name);
 
+  int status = system(command);
   if (status != 0) {
     printf("Error: Could not create the project directory for %s.\n", project_name);
     exit(EXIT_FAILURE);
   }
-  free(command);
 }
 
 void destroy_project(char *project_name) 
 {
   printf("Destroying project %s\n", project_name);
-  char *command = strcat("rm -rf " AGOGO_DIR "/projects/", project_name);
-  int status = system(command);
+  char command[256];
+  snprintf(command, sizeof(command), "rm -rf " AGOGO_PROJECTS_DIR "/%s", project_name);
 
+  int status = system(command);
   if (status != 0) {
     printf("Error: Could not destroy the project directory for %s.\n", project_name);
     exit(EXIT_FAILURE);
   }
-  free(command);
 }
