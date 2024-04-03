@@ -63,6 +63,11 @@ void list_projects();
 void create_project(char *project_name);
 void destroy_project(char *project_name);
 
+// Task commands
+int agogo_task(int argc, char *argv[]);
+void list_tasks();
+void add_task(char *task_name);
+void remove_task(char *task_name);
 
 /* ============================================================
  *  MAIN
@@ -87,6 +92,10 @@ int main(int argc, char *argv[])
 
   if (strcmp(first_command, "project") == 0) {
     exit_code = agogo_project(argc, argv);
+  }
+
+  if (strcmp(first_command, "task") == 0) {
+    exit_code = agogo_task(argc, argv);
   }
 
   return exit_code;
@@ -200,4 +209,52 @@ void destroy_project(char *project_name)
     printf("Error: Could not destroy the project directory for %s.\n", project_name);
     exit(EXIT_FAILURE);
   }
+}
+
+/* ============================================================
+ *  TASK
+ * ============================================================
+ */
+
+int agogo_task(int argc, char *argv[])
+{
+  if (argc < 3) {
+    list_tasks();
+    return EXIT_SUCCESS;
+  }
+
+  char *sub_command = argv[2];
+
+  if ((strcmp(sub_command, "--add") == 0) || (strcmp(sub_command, "-a") == 0)) {
+    if (argc < 4) {
+      printf("Error: Missing task name\n");
+      return EXIT_FAILURE;
+    }
+    add_task(argv[3]);
+  }
+
+  if ((strcmp(sub_command, "--remove") == 0) || (strcmp(sub_command, "-r") == 0)) {
+    if (argc < 4) {
+      printf("Error: Missing task name\n");
+      return EXIT_FAILURE;
+    }
+    remove_task(argv[3]);
+  }
+
+  return EXIT_SUCCESS;
+}
+
+void list_tasks() 
+{
+  printf("Listing tasks\n");
+}
+
+void add_task(char *task_name) 
+{
+  printf("Adding task %s\n", task_name);
+}
+
+void remove_task(char *task_name) 
+{
+  printf("Removing task %s\n", task_name);
 }
