@@ -56,12 +56,16 @@ void check_setup();
 
 // Help and print
 void print_short_help();
+void agogo_help();
+void agogo_status();
 
 // Project commands
 int agogo_project(int argc, char *argv[]);
 void list_projects();
 void create_project(char *project_name);
 void destroy_project(char *project_name);
+char *get_current_project();
+int project_exists(char *project_name);
 
 // Task commands
 int agogo_task(int argc, char *argv[]);
@@ -106,6 +110,12 @@ int main(int argc, char *argv[])
   }
   else if (strcmp(first_command, "clockoff") == 0) {
     exit_code = agogo_clockoff();
+  }
+  else if (strcmp(first_command, "status") == 0) {
+    agogo_status();
+  }
+  else if (strcmp(first_command, "help") == 0) {
+    agogo_help();
   }
   else {
     printf("Error: Unknown command %s\n", first_command);
@@ -152,7 +162,19 @@ void print_short_help() {
 }
 
 void agogo_help() {
+  return;
+}
 
+void agogo_status() {
+  if (is_clocked_on() != 0) {
+    printf("Not currently clocked on to any project.\n");
+    return;
+  }
+
+  char *current_project = get_current_project();
+  printf("Currently clocked on to project %s\n", current_project);
+  printf("Tasks:\n");
+  list_tasks();
 }
 
 /* ============================================================
@@ -214,6 +236,19 @@ void create_project(char *project_name)
 
 void destroy_project(char *project_name) 
 {
+  if (is_clocked_on() == 0) {
+      char *current_project = get_current_project();
+      if (strcmp(current_project, project_name) == 0) {
+        printf("Error: Cannot destroy the project you are currently clocked on to.\n");
+        exit(EXIT_FAILURE);
+      }
+  }
+
+  if (project_exists(project_name) != 0) {
+    printf("Error: Project %s does not exist.\n", project_name);
+    exit(EXIT_FAILURE);
+  }
+
   printf("Destroying project %s\n", project_name);
   char command[256];
   snprintf(command, sizeof(command), "rm -rf " AGOGO_PROJECTS_DIR "/%s", project_name);
@@ -223,6 +258,46 @@ void destroy_project(char *project_name)
     printf("Error: Could not destroy the project directory for %s.\n", project_name);
     exit(EXIT_FAILURE);
   }
+}
+
+char *get_current_project() 
+{
+  char *current_project = NULL;
+  FILE *fp;
+  char path[1035];
+
+  fp = popen("readlink " AGOGO_DIR "/current", "r");
+  if (fp == NULL) {
+    printf("Error: Could not read the current project.\n");
+    exit(EXIT_FAILURE);
+  }
+  
+  while (fgets(path, sizeof(path)-1, fp) != NULL) {
+    current_project = path;
+  }
+  
+  pclose(fp);
+
+  if (current_project == NULL) {
+    printf("Error: Could not read the current project.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  char *last_slash = strrchr(current_project, '/');
+  current_project = last_slash + 1;
+
+  return current_project;
+}
+
+int project_exists(char *project_name) 
+{
+  char project_path[256];
+  snprintf(project_path, sizeof(project_path), "%s/%s", AGOGO_PROJECTS_DIR, project_name);
+
+  char command[512];
+  snprintf(command, sizeof(command), "test -d %s", project_path);
+  int status = system(command);
+  return status;
 }
 
 /* ============================================================
@@ -254,24 +329,60 @@ int agogo_task(int argc, char *argv[])
     remove_task(argv[3]);
   }
 
-
   return EXIT_SUCCESS;
 }
 
 void list_tasks() 
 {
-  printf("Listing tasks\n");
+  if (is_clocked_on() != 0) {
+    printf("Error: Not currently clocked on to any project.\n");
+    return;
+  }
+
+  int status = system("ls " AGOGO_DIR "/current");
+
+  if (status != 0) {
+    printf("Error: Could not list the tasks.\n");
+    exit(EXIT_FAILURE);
+  }
 }
 
 void add_task(char *task_name) 
 {
+  if (is_clocked_on() != 0) {
+    printf("Error: Not currently clocked on to any project.\n");
+    return;
+  }
   printf("Adding task %s\n", task_name);
+
+  char command[256];
+  snprintf(command, sizeof(command), "touch " AGOGO_DIR "/current/%s", task_name);
+
+  int status = system(command);
+  if (status != 0) {
+    printf("Error: Could not add the task %s.\n", task_name);
+    exit(EXIT_FAILURE);
+  }
 }
 
 void remove_task(char *task_name) 
 {
+  if (is_clocked_on() != 0) {
+    printf("Error: Not currently clocked on to any project.\n");
+    return;
+  }
   printf("Removing task %s\n", task_name);
+  char command[256];
+  snprintf(command, sizeof(command), "rm " AGOGO_DIR "/current/%s", task_name);
+
+  int status = system(command);
+  if (status != 0) {
+    printf("Error: Could not remove the task %s.\n", task_name);
+    exit(EXIT_FAILURE);
+  }
 }
+
+
 
 /* ============================================================
  *  CLOCK
