@@ -1,12 +1,27 @@
+CC = gcc
+CFLAGS = -Wall -Wextra -pedantic -g
 
-all: main
+SRCDIR = src
+OBJDIR = obj
+BINDIR = bin
 
-main: src/main.c 
-	gcc src/main.c src/project.c src/clock.c  src/task.c -o agogo
+SRC = $(wildcard $(SRCDIR)/*.c)
+OBJ = $(SRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
+TARGET = $(BINDIR)/agogo
 
-debug: src/main.c
-	gcc -g src/main.c -o agogo
+$(TARGET): $(OBJ)
+	mkdir -p $(BINDIR)
+	$(CC) $(OBJ) -o $@
+
+$(OBJDIR)/%.o: $(SRCDIR)/%.c
+	echo "Compiling $<"
+	mkdir -p $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+.PHONY: clean 
 
 clean:
-	rm -f agogo
+	rm -rf $(OBJDIR) $(BINDIR)
+
+
 
