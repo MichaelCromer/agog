@@ -18,6 +18,7 @@ int agogo_task(int argc, char *argv[])
 
   char *sub_command = argv[2];
 
+  // Create a new task; arg is the task name
   if ((strcmp(sub_command, "--add") == 0) || (strcmp(sub_command, "-a") == 0)) {
     if (argc < 4) {
       printf("Error: Missing task name\n");
@@ -25,13 +26,66 @@ int agogo_task(int argc, char *argv[])
     }
     add_task(argv[3]);
   }
-  if ((strcmp(sub_command, "--remove") == 0) || (strcmp(sub_command, "-r") == 0)) {
+
+  // Remove the task; arg is the task name
+  else if ((strcmp(sub_command, "--remove") == 0) || (strcmp(sub_command, "-r") == 0)) {
     if (argc < 4) {
       printf("Error: Missing task name\n");
       return EXIT_FAILURE;
     }
     remove_task(argv[3]);
   }
+
+  // Log the time spent on the task; args are task name and time spent
+  else if ((strcmp(sub_command, "--log") == 0) || (strcmp(sub_command, "-l") == 0)) {
+    printf("Not implemented yet\n");
+  }
+
+  // Set the given task as the current task; arg is the task name
+  else if ((strcmp(sub_command, "--set") == 0) || (strcmp(sub_command, "-s") == 0)) {
+    printf("Not implemented yet\n");
+  }
+
+  // Unset the given task as the current task; arg is the task name
+  else if ((strcmp(sub_command, "--unset") == 0) || (strcmp(sub_command, "-u") == 0)) {
+    printf("Not implemented yet\n");
+  }
+
+  // Get a random new task
+  else if ((strcmp(sub_command, "--get") == 0) || (strcmp(sub_command, "-g") == 0)) {
+    printf("Not implemented yet\n");
+  }
+
+  // Move the task to another project; args are task name and project name
+  else if ((strcmp(sub_command, "--move") == 0) || (strcmp(sub_command, "-m") == 0)) {
+    printf("Not implemented yet\n");
+  }
+
+  // Rename the task; args are task name and new task name
+  else if ((strcmp(sub_command, "--rename") == 0) || (strcmp(sub_command, "-n") == 0)) {
+    printf("Not implemented yet\n");
+  }
+
+  // Copy the task; args are the task name and project name
+  else if ((strcmp(sub_command, "--copy") == 0) || (strcmp(sub_command, "-c") == 0)) {
+    printf("Not implemented yet\n");
+  }
+
+  // Set the priority of the task; args are the task name and priority level
+  else if ((strcmp(sub_command, "--priority") == 0) || (strcmp(sub_command, "-p") == 0)) {
+    printf("Not implemented yet\n");
+  }
+
+  // Mark the task as done; arg is the task name
+  else if ((strcmp(sub_command, "--done") == 0) || (strcmp(sub_command, "-d") == 0)) {
+    printf("Not implemented yet\n");
+  }
+
+  else {
+    printf("Error: Unknown subcommand %s\n for agogo-task\n", sub_command);
+    return EXIT_FAILURE;
+  }
+
 
   return EXIT_SUCCESS;
 }
