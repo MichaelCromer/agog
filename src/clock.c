@@ -1,6 +1,7 @@
 #include <ctype.h>
 
 #include "agogo.h"
+#include "project.h"
 #include "clock.h"
 
 int agogo_clockon(int argc, char *argv[]) 
@@ -56,7 +57,7 @@ int agogo_clockoff()
     return EXIT_FAILURE;
   }
 
-  printf("Clocking off\n");
+  printf("Clocking off project %s\n", get_current_project());
   int status = system("rm " AGOGO_DIR "/current");
   if (status != 0) {
     printf("Error: Could not clock off.\n");
