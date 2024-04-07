@@ -98,6 +98,11 @@ int agogo_task(int argc, char *argv[])
 }
 
 
+=======
+  return EXIT_SUCCESS;
+}
+
+>>>>>>> 81fc04b1aded7f08dcd1c132f0443dddd617e22d
 void list_tasks() 
 {
   if (is_clocked_on() != 0) {
