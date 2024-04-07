@@ -70,17 +70,13 @@ void create_project(char *project_name)
 
 void destroy_project(char *project_name) 
 {
-  if (is_clocked_on() == 0) {
-      char *current_project = get_current_project();
-      if (strcmp(current_project, project_name) == 0) {
-        printf("Error: Cannot destroy the project you are currently clocked on to.\n");
-        exit(EXIT_FAILURE);
-      }
-  }
-
   if (project_exists(project_name) != 0) {
     printf("Error: Project %s does not exist.\n", project_name);
     exit(EXIT_FAILURE);
+  }
+
+  if (is_clocked_on() == 0) {
+    agogo_clockoff();
   }
 
   printf("Destroying project %s\n", project_name);
