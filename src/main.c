@@ -38,6 +38,7 @@
 #include "project.h"
 #include "task.h"
 #include "clock.h"
+#include "log.h"
 
 /* ------------------------------------------------------------
  * PROTOTYPES
@@ -84,6 +85,9 @@ int main(int argc, char *argv[])
   }
   else if (strcmp(first_command, "clockoff") == 0) {
     exit_code = agogo_clockoff();
+  }
+  else if (strcmp(first_command, "log") == 0) {
+    exit_code = agogo_log(argc, argv);
   }
   else if (strcmp(first_command, "status") == 0) {
     agogo_status();

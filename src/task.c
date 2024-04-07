@@ -1,15 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "agogo.h"
 #include "task.h"
 #include "clock.h"
 
 void add_task(char *task_name);
 void remove_task(char *task_name);
-int task_exists(char *task_name);
-void log_time(char *task_name, char *time_spent);
 
 int agogo_task(int argc, char *argv[])
 {
@@ -36,16 +30,6 @@ int agogo_task(int argc, char *argv[])
       return EXIT_FAILURE;
     }
     remove_task(argv[3]);
-  }
-
-  // Log the time spent on the task; args are task name and time spent
-  else if ((strcmp(sub_command, "--log") == 0) || (strcmp(sub_command, "-l") == 0)) {
-    if (argc != 5) {
-      printf("Error: Pattern is agogo task --log <task_name> <time_spent>\n");
-      return EXIT_FAILURE;
-    }
-
-    log_time(argv[3], argv[4]);
   }
 
   // Set the given task as the current task; arg is the task name
@@ -98,11 +82,6 @@ int agogo_task(int argc, char *argv[])
 }
 
 
-=======
-  return EXIT_SUCCESS;
-}
-
->>>>>>> 81fc04b1aded7f08dcd1c132f0443dddd617e22d
 void list_tasks() 
 {
   if (is_clocked_on() != 0) {
@@ -153,28 +132,6 @@ void remove_task(char *task_name)
     printf("Error: Could not remove the task %s.\n", task_name);
     exit(EXIT_FAILURE);
   }
-}
-
-
-void log_time(char *task_name, char *time_spent)
-{
-  if (task_exists(task_name) != 0) {
-    printf("Error: Task %s does not exist.\n", task_name);
-    exit(EXIT_FAILURE);
-  }
-
-  char command[256];
-  int num_minutes = parse_time(time_spent);
-
-  printf("Logging %d minutes for task %s\n", num_minutes, task_name);
-  snprintf(command, sizeof(command), "echo %d >> " AGOGO_DIR "/current/%s", num_minutes, task_name);
-
-  int status = system(command);
-  if (status != 0) {
-    printf("Error: Could not log the time %s for task %s.\n", time_spent, task_name);
-    exit(EXIT_FAILURE);
-  }
-
 }
 
 
