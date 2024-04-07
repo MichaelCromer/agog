@@ -8,7 +8,6 @@
 void list_projects();
 void create_project(char *project_name);
 void destroy_project(char *project_name);
-char *get_current_project();
 int project_exists(char *project_name);
 
 
