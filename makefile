@@ -14,7 +14,6 @@ $(TARGET): $(OBJ)
 	$(CC) $(OBJ) -o $@
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
-	echo "Compiling $<"
 	mkdir -p $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
