@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "agogo.h"
 #include "clock.h"
@@ -71,4 +72,41 @@ int is_clocked_on()
 {
   int status = system("test -L " AGOGO_DIR "/current");
   return status;
+}
+
+
+// expected format: xhym or xh or xm
+// output: time in minutes
+int parse_time(char *time_str)
+{
+  int minutes = 0;
+  int hours = 0;
+  int unit = 0;
+
+  int h_count = 0;
+  int m_count = 0;
+
+  for (char *c = time_str; *c; c++) {
+    if (isdigit(*c)) {
+      unit = unit * 10 + (*c - '0');
+    } else if (*c == 'h') {
+      h_count++;
+      hours = unit;
+      unit = 0;
+    } else if (*c == 'm') {
+      m_count++;
+      minutes = unit;
+      unit = 0;
+    } else {
+      printf("Error: Invalid time format. Use xhym or xh or xm\n");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  if (h_count > 1 || m_count > 1) {
+    printf("Error: Invalid time format. Use xhym or xh or xm\n");
+    exit(EXIT_FAILURE);
+  }
+
+  return hours * 60 + minutes;
 }
