@@ -52,6 +52,11 @@ void list_projects()
 
 void create_project(char *project_name) 
 {
+  if (project_exists(project_name) == 0) {
+    printf("Error: Project %s already exists.\n", project_name);
+    exit(EXIT_FAILURE);
+  }
+
   printf("Creating project %s\n", project_name);
   char command[256];
   snprintf(command, sizeof(command), "mkdir -p " AGOGO_PROJECTS_DIR "/%s", project_name);
