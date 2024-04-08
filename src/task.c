@@ -2,8 +2,11 @@
 #include "task.h"
 #include "clock.h"
 
+
 void add_task(char *task_name);
 void remove_task(char *task_name);
+void rename_task(char *old, char *new);
+
 
 int agogo_task(int argc, char *argv[])
 {
@@ -54,7 +57,11 @@ int agogo_task(int argc, char *argv[])
 
   // Rename the task; args are task name and new task name
   else if ((strcmp(sub_command, "--rename") == 0) || (strcmp(sub_command, "-n") == 0)) {
-    printf("Not implemented yet\n");
+    if (argc < 5) {
+      printf("Error: Missing task name\n");
+      return EXIT_FAILURE;
+    }
+    rename_task(argv[3], argv[4]);
   }
 
   // Copy the task; args are the task name and project name
@@ -89,7 +96,7 @@ void list_tasks()
     return;
   }
 
-  int status = system("ls " AGOGO_DIR "/current");
+  int status = system("ls " AGOGO_CURRENTS_DIR "/project | sort | column");
 
   if (status != 0) {
     printf("Error: Could not list the tasks.\n");
@@ -135,6 +142,29 @@ void remove_task(char *task_name)
 }
 
 
+void rename_task(char *old, char *new) {
+  if (task_exists(old) != 0) {
+    printf("Error: Task %s does not exist.\n", old);
+    exit(EXIT_FAILURE);
+  }
+  else if (task_exists(new) == 0) {
+    printf("Error: Task %s already exists.\n", new);
+    exit(EXIT_FAILURE);
+  }
+
+  char command[256];
+  snprintf(command, sizeof(command), "mv " AGOGO_DIR "/current/%s " AGOGO_DIR "/current/%s", old, new);
+
+  int status = system(command);
+  if (status != 0) {
+    printf("Error: Could not rename the task %s to %s.\n", old, new);
+    exit(EXIT_FAILURE);
+  }
+
+  printf("Renamed task %s to %s\n", old, new);
+}
+
+
 int task_exists(char *task_name)
 {
   if (is_clocked_on() != 0) {
@@ -150,5 +180,3 @@ int task_exists(char *task_name)
   }
   return EXIT_SUCCESS;
 }
-
-

@@ -4,11 +4,12 @@
 
 #include "agogo.h"
 #include "clock.h"
+#include "project.h"
+
 
 void list_projects();
 void create_project(char *project_name);
 void destroy_project(char *project_name);
-int project_exists(char *project_name);
 
 
 int agogo_project(int argc, char *argv[])
@@ -39,16 +40,17 @@ int agogo_project(int argc, char *argv[])
   return EXIT_SUCCESS;
 }
 
+
 void list_projects() 
 {
-  printf("Listing projects\n");
-  int status = system("ls " AGOGO_PROJECTS_DIR);
+  int status = system("ls " AGOGO_PROJECTS_DIR " | sort | column");
 
   if (status != 0) {
     printf("Error: Could not list the projects.\n");
     exit(EXIT_FAILURE);
   }
 }
+
 
 void create_project(char *project_name) 
 {
@@ -57,7 +59,6 @@ void create_project(char *project_name)
     exit(EXIT_FAILURE);
   }
 
-  printf("Creating project %s\n", project_name);
   char command[256];
   snprintf(command, sizeof(command), "mkdir -p " AGOGO_PROJECTS_DIR "/%s", project_name);
 
@@ -66,7 +67,9 @@ void create_project(char *project_name)
     printf("Error: Could not create the project directory for %s.\n", project_name);
     exit(EXIT_FAILURE);
   }
+  printf("Created project %s\n", project_name);
 }
+
 
 void destroy_project(char *project_name) 
 {
@@ -90,34 +93,27 @@ void destroy_project(char *project_name)
   }
 }
 
+
+// reads the basename of the softlink AGOGO_CURRENTS_DIR/project
 char *get_current_project() 
 {
-  char *current_project = NULL;
-  FILE *fp;
-  char path[1035];
-
-  fp = popen("readlink " AGOGO_DIR "/current", "r");
+  char *command = "basename $(readlink " AGOGO_CURRENTS_DIR "/project )";
+  FILE *fp = popen(command, "r");
   if (fp == NULL) {
     printf("Error: Could not read the current project.\n");
     exit(EXIT_FAILURE);
   }
-  
-  while (fgets(path, sizeof(path)-1, fp) != NULL) {
-    current_project = path;
-  }
-  
+
+  char project_name[256];
+  fgets(project_name, sizeof(project_name), fp);
   pclose(fp);
 
-  if (current_project == NULL) {
-    printf("Error: Could not read the current project.\n");
-    exit(EXIT_FAILURE);
-  }
+  // remove the newline character
+  project_name[strlen(project_name) - 1] = '\0';
 
-  char *last_slash = strrchr(current_project, '/');
-  current_project = last_slash + 1;
-
-  return current_project;
+  return strdup(project_name);
 }
+
 
 int project_exists(char *project_name) 
 {

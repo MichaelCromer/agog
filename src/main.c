@@ -53,10 +53,12 @@ void print_short_help();
 void agogo_help();
 void agogo_status();
 
+
 /* ============================================================
  *  MAIN
  * ============================================================
  */
+
 
 int main(int argc, char *argv[])
 {
@@ -108,6 +110,7 @@ int main(int argc, char *argv[])
  * ============================================================
  */
 
+
 void agogo_setup() {
   // create the agogo directory
   int status = system("mkdir -p " AGOGO_PROJECTS_DIR);
@@ -116,6 +119,7 @@ void agogo_setup() {
     exit(EXIT_FAILURE);
   }
 }
+
 
 void check_setup() {
   // check that the agogo directory exists
@@ -132,6 +136,7 @@ void check_setup() {
  * ============================================================
  */
 
+
 void print_short_help() {
   printf("============================================================\n");
   printf("Agogo - A command-line tool for project management.\n");
@@ -139,9 +144,11 @@ void print_short_help() {
   printf("============================================================\n");
 }
 
+
 void agogo_help() {
   return;
 }
+
 
 void agogo_status() {
   if (is_clocked_on() != 0) {
@@ -150,10 +157,7 @@ void agogo_status() {
   }
 
   char *current_project = get_current_project();
-  printf("Currently clocked on to project %s\n", current_project);
+  printf("Project %s\n", current_project);
   printf("Tasks:\n");
   list_tasks();
 }
-
-
-
