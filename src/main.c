@@ -39,6 +39,7 @@
 #include "task.h"
 #include "clock.h"
 #include "log.h"
+#include "status.h"
 
 /* ------------------------------------------------------------
  * PROTOTYPES
@@ -51,7 +52,6 @@ void check_setup();
 // Help and print
 void print_short_help();
 void agogo_help();
-void agogo_status();
 
 
 /* ============================================================
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
     exit_code = agogo_log(argc, argv);
   }
   else if (strcmp(first_command, "status") == 0) {
-    agogo_status();
+    exit_code = agogo_status();
   }
   else if (strcmp(first_command, "help") == 0) {
     agogo_help();
@@ -149,15 +149,3 @@ void agogo_help() {
   return;
 }
 
-
-void agogo_status() {
-  if (!is_clocked_on()) {
-    printf("Not currently clocked on to any project.\n");
-    return;
-  }
-
-  char *current_project = get_current_project();
-  printf("Project %s\n", current_project);
-  printf("Tasks:\n");
-  list_tasks();
-}
