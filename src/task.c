@@ -156,12 +156,12 @@ void move_task(char *old_task, char *new_task) {
 
 void set_current_task(char *task_name) 
 {
-  if (task_exists(task_name) != 0) {
+  if (!task_exists(task_name)) {
     printf("Error: Task %s does not exist.\n", task_name);
     exit(EXIT_FAILURE);
   }
 
-  if (has_current_task() == 0) {
+  if (has_current_task()) {
     int status = system("rm " AGOGO_DIR "/current/task");
     if (status != 0) {
       printf("Error: Could not unset the current task.\n");
