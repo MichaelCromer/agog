@@ -46,7 +46,7 @@ int agogo_clockoff()
   }
 
   printf("Clocking off project %s\n", get_current_project());
-  int status = system("rm " AGOGO_CURRENTS_DIR "/project");
+  int status = system("rm " AGOGO_CURRENTS_DIR "/*");
   if (status != 0) {
     printf("Error: Could not clock off.\n");
     exit(EXIT_FAILURE);

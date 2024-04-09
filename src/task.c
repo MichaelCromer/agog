@@ -30,10 +30,14 @@ int agogo_task(int argc, char *argv[])
 
   // Set the given task as the current task; arg is the task name
   else if ((strcmp(sub_command, "--set") == 0) || (strcmp(sub_command, "-s") == 0)) {
-    printf("Not implemented yet\n");
+    if (argc < 4) {
+      printf("Error: Missing task name\n");
+      return EXIT_FAILURE;
+    }
+    set_current_task(argv[3]);
   }
 
-  // Unset the given task as the current task; arg is the task name
+  // Unset the current task if any 
   else if ((strcmp(sub_command, "--unset") == 0) || (strcmp(sub_command, "-u") == 0)) {
     printf("Not implemented yet\n");
   }
@@ -43,18 +47,13 @@ int agogo_task(int argc, char *argv[])
     printf("Not implemented yet\n");
   }
 
-  // Move the task to another project; args are task name and project name
+  // Move the task to a new name; args are the old task name and new task name
   else if ((strcmp(sub_command, "--move") == 0) || (strcmp(sub_command, "-m") == 0)) {
-    printf("Not implemented yet\n");
-  }
-
-  // Rename the task; args are task name and new task name
-  else if ((strcmp(sub_command, "--rename") == 0) || (strcmp(sub_command, "-n") == 0)) {
     if (argc < 5) {
       printf("Error: Missing task name\n");
       return EXIT_FAILURE;
     }
-    rename_task(argv[3], argv[4]);
+    move_task(argv[3], argv[4]);
   }
 
   // Copy the task; args are the task name and project name
@@ -125,7 +124,7 @@ void remove_task(char *task_name)
   }
   printf("Removing task %s\n", task_name);
   char command[256];
-  snprintf(command, sizeof(command), "rm " AGOGO_DIR "/current/%s", task_name);
+  snprintf(command, sizeof(command), "rm " AGOGO_CURRENTS_DIR "/project/%s", task_name);
 
   int status = system(command);
   if (status != 0) {
@@ -135,30 +134,90 @@ void remove_task(char *task_name)
 }
 
 
-void rename_task(char *old, char *new) {
-  if (task_exists(old) != 0) {
-    printf("Error: Task %s does not exist.\n", old);
-    exit(EXIT_FAILURE);
-  }
-  else if (task_exists(new) == 0) {
-    printf("Error: Task %s already exists.\n", new);
+// TODO this will eventually work for moving tasks between projects
+void move_task(char *old_task, char *new_task) {
+  if (task_exists(old_task)) {
+    printf("Error: Task %s does not exist.\n", old_task);
     exit(EXIT_FAILURE);
   }
 
   char command[256];
-  snprintf(command, sizeof(command), "mv " AGOGO_DIR "/current/%s " AGOGO_DIR "/current/%s", old, new);
+  snprintf(command, sizeof(command), "mv " AGOGO_CURRENTS_DIR "/project/%s " AGOGO_CURRENTS_DIR "/project/%s", old_task, new_task);
 
   int status = system(command);
   if (status != 0) {
-    printf("Error: Could not rename the task %s to %s.\n", old, new);
+    printf("Error: Could not move the task %s to %s.\n", old_task, new_task);
     exit(EXIT_FAILURE);
   }
 
-  printf("Renamed task %s to %s\n", old, new);
+  printf("Renamed task %s to %s\n", old_task, new_task);
 }
 
 
+void set_current_task(char *task_name) 
 {
+  if (task_exists(task_name) != 0) {
+    printf("Error: Task %s does not exist.\n", task_name);
+    exit(EXIT_FAILURE);
+  }
+
+  if (has_current_task() == 0) {
+    int status = system("rm " AGOGO_DIR "/current/task");
+    if (status != 0) {
+      printf("Error: Could not unset the current task.\n");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  char command[256];
+  snprintf(command, sizeof(command), "ln -s " AGOGO_CURRENTS_DIR "/project/%s " AGOGO_CURRENTS_DIR "/task", task_name);
+
+  int status = system(command);
+  if (status != 0) {
+    printf("Error: Could not set the current task to %s.\n", task_name);
+    exit(EXIT_FAILURE);
+  }
+
+  printf("Set the current task to %s\n", task_name);
+}
+
+
+char *get_current_task() 
+{
+  char *command = "basename $(readlink " AGOGO_CURRENTS_DIR "/task )";
+  FILE *fp = popen(command, "r");
+  if (fp == NULL) {
+    printf("Error: Could not read the current task.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  char task_name[256];
+  fgets(task_name, sizeof(task_name), fp);
+  pclose(fp);
+
+  // remove the newline character
+  task_name[strlen(task_name) - 1] = '\0';
+
+  return strdup(task_name);
+}
+
+
+bool has_current_task() 
+{
+  if (!is_clocked_on()) {
+    return false;
+  }
+
+  char *command = "test -f " AGOGO_DIR "/current/task";
+  int status = system(command);
+  if (status != 0) {
+    return false;
+  }
+  return true;
+}
+
+
+// TODO eventually this will accept a project name too
 bool task_exists(char *task_name)
 {
   if (!is_clocked_on()) {
@@ -166,7 +225,7 @@ bool task_exists(char *task_name)
   }
 
   char command[256];
-  snprintf(command, sizeof(command), "test -f " AGOGO_DIR "/current/%s", task_name);
+  snprintf(command, sizeof(command), "test -f " AGOGO_CURRENTS_DIR "/project/%s", task_name);
 
   int status = system(command);
   if (status != 0) {

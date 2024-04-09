@@ -5,8 +5,13 @@ void log_time(char *task_name, char *time_spent);
 
 int agogo_log(int argc, char **argv)
 {
+  if (has_current_task() != 0) {
+    printf("Error: No current task has been set.\n");
+    return EXIT_FAILURE;
+  }
+
   if (argc != 4) {
-    printf("Usage: agogo log <task_name> <time_spent>\n");
+    printf("Usage: agogo log <time_spent>\n");
     return EXIT_FAILURE;
   }
 
