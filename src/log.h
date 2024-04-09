@@ -6,5 +6,6 @@
 #include "clock.h"
 
 int agogo_log(int argc, char *argv[]);
+void log_time(char *time_spent);
 
 #endif // LOG_H
