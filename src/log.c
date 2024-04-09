@@ -1,6 +1,5 @@
-#include "agogo.h"
-#include "task.h"
-#include "clock.h"
+#include "log.h"
+
 
 void log_time(char *task_name, char *time_spent);
 

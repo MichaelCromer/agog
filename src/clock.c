@@ -1,7 +1,3 @@
-#include <ctype.h>
-
-#include "agogo.h"
-#include "project.h"
 #include "clock.h"
 
 

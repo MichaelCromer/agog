@@ -1,11 +1,4 @@
-#include "agogo.h"
 #include "task.h"
-#include "clock.h"
-
-
-void add_task(char *task_name);
-void remove_task(char *task_name);
-void rename_task(char *old, char *new);
 
 
 int agogo_task(int argc, char *argv[])

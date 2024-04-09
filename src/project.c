@@ -1,15 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "agogo.h"
-#include "clock.h"
 #include "project.h"
-
-
-void list_projects();
-void create_project(char *project_name);
-void destroy_project(char *project_name);
 
 
 int agogo_project(int argc, char *argv[])
