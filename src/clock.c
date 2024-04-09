@@ -21,7 +21,7 @@ int agogo_clockon(int argc, char *argv[])
   }
 
   // then check if we are already clocked on to a project
-  if (is_clocked_on() == 0) {
+  if (is_clocked_on()) {
     system("rm " AGOGO_CURRENTS_DIR "/project");
   }
 
@@ -44,7 +44,7 @@ int agogo_clockon(int argc, char *argv[])
 
 int agogo_clockoff() 
 {
-  if (is_clocked_on() != 0) {
+  if (!is_clocked_on()) {
     printf("Error: Not currently clocked on to any project.\n");
     return EXIT_FAILURE;
   }
@@ -58,10 +58,9 @@ int agogo_clockoff()
   return EXIT_SUCCESS;
 }
 
-int is_clocked_on() 
+bool is_clocked_on() 
 {
-  int status = system("test -L " AGOGO_CURRENTS_DIR "/project");
-  return status;
+  return (system("test -L " AGOGO_CURRENTS_DIR "/project") == 0);
 }
 
 

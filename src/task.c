@@ -91,7 +91,7 @@ int agogo_task(int argc, char *argv[])
 
 void list_tasks() 
 {
-  if (is_clocked_on() != 0) {
+  if (!is_clocked_on()) {
     printf("Error: Not currently clocked on to any project.\n");
     return;
   }
@@ -107,7 +107,7 @@ void list_tasks()
 
 void add_task(char *task_name) 
 {
-  if (is_clocked_on() != 0) {
+  if (!is_clocked_on()) {
     printf("Error: Not currently clocked on to any project.\n");
     return;
   }
@@ -126,7 +126,7 @@ void add_task(char *task_name)
 
 void remove_task(char *task_name) 
 {
-  if (is_clocked_on() != 0) {
+  if (!is_clocked_on()) {
     printf("Error: Not currently clocked on to any project.\n");
     return;
   }
@@ -165,10 +165,11 @@ void rename_task(char *old, char *new) {
 }
 
 
-int task_exists(char *task_name)
 {
-  if (is_clocked_on() != 0) {
-    return EXIT_FAILURE;
+bool task_exists(char *task_name)
+{
+  if (!is_clocked_on()) {
+    return false;
   }
 
   char command[256];
@@ -176,7 +177,7 @@ int task_exists(char *task_name)
 
   int status = system(command);
   if (status != 0) {
-    return EXIT_FAILURE;
+    return false;
   }
-  return EXIT_SUCCESS;
+  return true;
 }

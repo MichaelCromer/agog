@@ -151,7 +151,7 @@ void agogo_help() {
 
 
 void agogo_status() {
-  if (is_clocked_on() != 0) {
+  if (!is_clocked_on()) {
     printf("Not currently clocked on to any project.\n");
     return;
   }

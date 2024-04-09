@@ -78,7 +78,7 @@ void destroy_project(char *project_name)
     exit(EXIT_FAILURE);
   }
 
-  if (is_clocked_on() == 0) {
+  if (is_clocked_on()) {
     agogo_clockoff();
   }
 
