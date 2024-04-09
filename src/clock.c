@@ -15,7 +15,7 @@ int agogo_clockon(int argc, char *argv[])
   char *project_name = argv[2];
 
   // first check if the project exists
-  if (project_exists(project_name) != 0) {
+  if (!project_exists(project_name)) {
     printf("Error: Project %s does not exist.\n", project_name);
     return EXIT_FAILURE;
   }

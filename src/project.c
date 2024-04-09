@@ -54,7 +54,7 @@ void list_projects()
 
 void create_project(char *project_name) 
 {
-  if (project_exists(project_name) == 0) {
+  if (project_exists(project_name)) {
     printf("Error: Project %s already exists.\n", project_name);
     exit(EXIT_FAILURE);
   }
@@ -73,7 +73,7 @@ void create_project(char *project_name)
 
 void destroy_project(char *project_name) 
 {
-  if (project_exists(project_name) != 0) {
+  if (!project_exists(project_name)) {
     printf("Error: Project %s does not exist.\n", project_name);
     exit(EXIT_FAILURE);
   }
@@ -115,13 +115,12 @@ char *get_current_project()
 }
 
 
-int project_exists(char *project_name) 
+bool project_exists(char *project_name) 
 {
   char project_path[256];
-  snprintf(project_path, sizeof(project_path), "%s/%s", AGOGO_PROJECTS_DIR, project_name);
+  snprintf(project_path, sizeof(project_path), AGOGO_PROJECTS_DIR "/%s", project_name);
 
   char command[512];
   snprintf(command, sizeof(command), "test -d %s", project_path);
-  int status = system(command);
-  return status;
+  return (system(command) == 0);
 }
