@@ -72,7 +72,7 @@ int agogo_task(int argc, char *argv[])
   }
 
   else {
-    printf("Error: Unknown subcommand %s\n for agogo-task\n", sub_command);
+    printf("Error: Unknown subcommand %s for agogo-task\n", sub_command);
     return EXIT_FAILURE;
   }
 
@@ -103,16 +103,20 @@ void add_task(char *task_name)
     printf("Error: Not currently clocked on to any project.\n");
     return;
   }
-  printf("Adding task %s\n", task_name);
+
+  if (task_exists(task_name)) {
+    printf("Error: Task %s already exists.\n", task_name);
+    exit(EXIT_FAILURE);
+  }
 
   char command[256];
-  snprintf(command, sizeof(command), "touch " AGOGO_DIR "/current/%s", task_name);
-
-  int status = system(command);
-  if (status != 0) {
+  snprintf(command, sizeof(command), "echo \"0 0\" > " AGOGO_CURRENTS_DIR "/project/%s", task_name);
+  if (system(command) != 0) {
     printf("Error: Could not add the task %s.\n", task_name);
     exit(EXIT_FAILURE);
   }
+
+  printf("Added task %s\n", task_name);
 }
 
 
@@ -122,7 +126,6 @@ void remove_task(char *task_name)
     printf("Error: Not currently clocked on to any project.\n");
     return;
   }
-  printf("Removing task %s\n", task_name);
   char command[256];
   snprintf(command, sizeof(command), "rm " AGOGO_CURRENTS_DIR "/project/%s", task_name);
 
@@ -131,12 +134,13 @@ void remove_task(char *task_name)
     printf("Error: Could not remove the task %s.\n", task_name);
     exit(EXIT_FAILURE);
   }
+  printf("Removed task %s\n", task_name);
 }
 
 
 // TODO this will eventually work for moving tasks between projects
 void move_task(char *old_task, char *new_task) {
-  if (task_exists(old_task)) {
+  if (!task_exists(old_task)) {
     printf("Error: Task %s does not exist.\n", old_task);
     exit(EXIT_FAILURE);
   }
