@@ -1,29 +1,31 @@
 # AGOGO
 
-Help you to partition your time between your various projects in a way that tries to be fair to all of them.
+A command-line tool for time and project management.
 
 ## What?
-Create a workspace and add projects to it. While clocked on to a workspace, agogo will randomly select projects for
-you to work on. Agogo will prioritise projects you mark as important as well as those you have not touched for a while.
+
+Create a project and add tasks to it. Set the current task and log time against it. See
+stats on time spent, create a project timetable, and more.
 
 ## Commands
 
 ### General
-- `agogo clockon <workspace>`           : starts agogo if not running, and switches to the specified workspace
-- `agogo clockoff`                      : stops agogo
-- `agogo status`                        : report information about the current running state
-- `agogo config [-OPTS]`                : change user configuration settings
-- `agogo help <topic>`                  : print help about the requested topic
-
-### Workspace
-- `agogo create <workspace>`            : create a new empty workspace
-- `agogo destroy <workspace>`           : destroy the workspace and all projects in it
-- `agogo list`                          : list all the workspaces, indicating active 
+- `agogo status`             : report information about the current state
+- `agogo config`             : change user settings
+- `agogo help`               : print help about requested topic
 
 ### Project
-- `agogo add <workspace> <project>`     : add the named project to the given workspace
-- `agogo remove <workspace> <project>`  : remove the named project from the given workspace
-- `agogo list <workspace>`              : list all current projects in the workspace, current active if none specified
-- `agogo modify <project> [-OPTS]`      : set the details for the given project
-- `agogo toggle <project>`              : turn the specified project on or off
+- `agogo project`            : list, create, modify, or delete projects
+- `agogo clockon`            : sets the current project 
+- `agogo clockoff`           : unsets any current project
 
+### Task
+- `agogo task`               : list, create, modify, or delete tasks
+- `agogo start`              : sets the current task
+- `agogo stop`               : unsets any current task
+- `agogo punch`              : logs time against the current task
+
+### Time, Timetable, etc.
+- `agogo time`               : report various timer states
+- `agogo table`              : view a generated timetable
+- `agogo log`                : view various logs
