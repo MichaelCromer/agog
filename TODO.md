@@ -4,7 +4,7 @@
 
 Ability to modify a project's importance.
 
-Currently, clocking on creates a dotfile .current.agogo. Clocking off removes this file.  The main loop of clockon
+Currently, clocking on creates a dotfile .current.agog. Clocking off removes this file.  The main loop of clockon
 checks for the presence of the file before deciding to proceed with project selection. This will become a problem if
 users clock on and then clock on again. This should be fixed by adding a unique identifier to each clockon session and
 including it in the .current filename. Each instance of the main loop will be looking for its own .current file?
@@ -14,7 +14,7 @@ actually be the source of the "randomly generated projects" that the user reciev
 on, if a timetable for that day/session does not already exist for that workspace, then one is generated. Then, it
 doesn't matter if the user changes workspace with another call to clockon. 
    
-   clockon ${ws}    --->    (-e tt-${ws}-${date})   --[y]-->    put ${ws} in .current.agogo
+   clockon ${ws}    --->    (-e tt-${ws}-${date})   --[y]-->    put ${ws} in .current.agog
 
                                         |                           Λ           |
                                        [n]                          |           |
@@ -31,7 +31,7 @@ doesn't matter if the user changes workspace with another call to clockon.
                                                                              |           |
                                                                              V           |
                                                                                          |
-    exit 0      <-----------------------------------------[n]--    (-e .current.agogo)   |
+    exit 0      <-----------------------------------------[n]--    (-e .current.agog)   |
                                                                                          |  
                                                                              |           |
                                                                             [y]          |
@@ -57,9 +57,9 @@ Topics:
 - creating and destroying workspaces
 - adding and removing projects
 - listing workspaces and projects
-- modifying project properties and how agogo calculates score
+- modifying project properties and how agog calculates score
 - configuration options
 
 ## Bindings
 
-- Use of `agogo list .` as a synonym for current workspace.
+- Use of `agog list .` as a synonym for current workspace.

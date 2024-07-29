@@ -6,10 +6,10 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "agogo.h"
+#include "agog.h"
 #include "clock.h"
 
-int agogo_project(int argc, char *argv[]);
+int agog_project(int argc, char *argv[]);
 char *get_current_project();
 bool project_exists(char *project);
 void list_projects();

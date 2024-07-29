@@ -1,4 +1,4 @@
-# AGOGO
+# AGOG
 
 A command-line tool for time and project management.
 
@@ -10,22 +10,22 @@ stats on time spent, create a project timetable, and more.
 ## Commands
 
 ### General
-- `agogo status`             : report information about the current state
-- `agogo config`             : change user settings
-- `agogo help`               : print help about requested topic
+- `agog status`             : report information about the current state
+- `agog config`             : change user settings
+- `agog help`               : print help about requested topic
 
 ### Project
-- `agogo project`            : list, create, modify, or delete projects
-- `agogo clockon`            : sets the current project 
-- `agogo clockoff`           : unsets any current project
+- `agog project`            : list, create, modify, or delete projects
+- `agog clockon`            : sets the current project 
+- `agog clockoff`           : unsets any current project
 
 ### Task
-- `agogo task`               : list, create, modify, or delete tasks
-- `agogo start`              : sets the current task
-- `agogo stop`               : unsets any current task
-- `agogo punch`              : logs time against the current task
+- `agog task`               : list, create, modify, or delete tasks
+- `agog start`              : sets the current task
+- `agog stop`               : unsets any current task
+- `agog punch`              : logs time against the current task
 
 ### Time, Timetable, etc.
-- `agogo time`               : report various timer states
-- `agogo table`              : view a generated timetable
-- `agogo log`                : view various logs
+- `agog time`               : report various timer states
+- `agog table`              : view a generated timetable
+- `agog log`                : view various logs

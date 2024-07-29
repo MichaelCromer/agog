@@ -1,15 +1,15 @@
-#ifndef AGOGO_CLOCK_H
-#define AGOGO_CLOCK_H
+#ifndef AGOG_CLOCK_H
+#define AGOG_CLOCK_H
 
 #include <ctype.h>
 #include <stdbool.h>
 
-#include "agogo.h"
+#include "agog.h"
 #include "project.h"
 
-int agogo_clockon(int argc, char *argv[]);
-int agogo_clockoff();
+int agog_clockon(int argc, char *argv[]);
+int agog_clockoff();
 bool is_clocked_on();
 int parse_time(char *time_str);
 
-#endif // AGOGO_CLOCK_H
+#endif // AGOG_CLOCK_H
