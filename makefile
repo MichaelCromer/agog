@@ -1,26 +1,27 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -pedantic -g
+CFLAGS = -Wall -Wextra -pedantic
 
 SRCDIR = src
-OBJDIR = obj
-BINDIR = bin
+BLDDIR = build
+TARGET = agog
+AGOG_INSTALL_DIR ?= /usr/local/bin/
 
 SRC = $(wildcard $(SRCDIR)/*.c)
-OBJ = $(SRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
-TARGET = $(BINDIR)/agogo
+OBJ = $(SRC:%.c=$(BLDDIR)/%.o)
 
-$(TARGET): $(OBJ)
-	mkdir -p $(BINDIR)
+$(BLDDIR)/$(TARGET): $(OBJ)
 	$(CC) $(OBJ) -o $@
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.c
-	mkdir -p $(OBJDIR)
+$(BLDDIR)/%.o: %.c
+	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-.PHONY: clean 
+.PHONY: install
+install:
+	echo "$(AGOG_INSTALL_DIR)"
+	cp $(BLDDIR)/$(TARGET) $(AGOG_INSTALL_DIR)
 
+.PHONY: clean
 clean:
-	rm -rf $(OBJDIR) $(BINDIR)
-
-
+	rm -r $(BLDDIR)
 
