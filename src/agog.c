@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 /* ------------------------------------------------------------
  * Defines
@@ -52,11 +53,14 @@
 void agog_short_help(void);
 void agog_help(void);
 
+// Utility
+void agog_rmdir_recursive(char *dirpath);
+
 // Project
 void agog_project(int argc, char *argv[]);
 void agog_project_list(void);
 void agog_project_create(int argc, char *argv[]);
-
+void agog_project_destroy(int argc, char *argv[]);
 
 /* ============================================================
  *  FUNCTIONS
@@ -124,6 +128,38 @@ void agog_setup()
     mkdir(AGOG_PROJECTS, S_IRWXU);
 }
 
+void agog_rmdir_recursive(char *dirpath)
+{
+    DIR *d = opendir(dirpath);
+    if (d == NULL) {
+        return;
+    }
+
+    struct dirent *entry;
+    struct stat s;
+
+    while ((entry = readdir(d)) != NULL) {
+        if (strncmp(entry->d_name, ".", 1) == 0) {
+            continue;
+        }
+        int bufsize = strlen(dirpath) + strlen(entry->d_name + 2);
+        char *buf = malloc(bufsize);
+        snprintf(buf, bufsize, "%s/%s", dirpath, entry->d_name);
+        if ((stat(buf, &s) == 0)) {
+            if (S_ISDIR(s.st_mode)) {
+                agog_rmdir_recursive(buf);
+            } else {
+                unlink(buf);
+            }
+        }
+        free(buf);
+    }
+    closedir(d);
+    rmdir(dirpath);
+
+    return;
+}
+
 /* ------------------------------------------------------------
  * Project
  * */
@@ -169,10 +205,38 @@ void agog_project_create(int argc, char *argv[])
     }
 
     struct stat s;
-    char *project = strcat(strdup(AGOG_PROJECTS), argv[1]);
+    char *prj_name = argv[1];
+    char *prj_dir = strdup(AGOG_PROJECTS);
+    char *project = strcat(prj_dir, prj_name);
+
     if (stat(project, &s) == 0 && S_ISDIR(s.st_mode)) {
         printf("Project %s already exists.\n", argv[1]);
         return;
     }
     mkdir(project, S_IRWXU);
+    printf("Created new project %s.\n", argv[1]);
+    free(prj_dir);
+    return;
 }
+
+void agog_project_destroy(int argc, char *argv[])
+{
+    if (argc < 2) {
+        printf("agog-project-destroy requires argument : project name\n");
+        exit(EXIT_FAILURE);
+    }
+
+    struct stat s;
+    char *prj_name = argv[1];
+    char *prj_dir = strdup(AGOG_PROJECTS);
+    char *project = strcat(prj_dir, prj_name);
+    
+    if (stat(project, &s) != 0 || !S_ISDIR(s.st_mode)) {
+        printf("Project %s does not exist.\n", argv[1]);
+        return;
+    }
+    agog_rmdir_recursive(project);
+    free(prj_dir);
+    return;
+}
+
