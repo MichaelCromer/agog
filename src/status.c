@@ -1,7 +1,7 @@
 #include "status.h"
 
 
-int agogo_status() {
+int agog_status() {
   char *current_project = NULL;
   char *current_task = NULL;
 

@@ -1,7 +1,7 @@
 #include "project.h"
 
 
-int agogo_project(int argc, char *argv[])
+int agog_project(int argc, char *argv[])
 {
   if (argc < 3) {
     list_projects();
@@ -32,7 +32,7 @@ int agogo_project(int argc, char *argv[])
 
 void list_projects() 
 {
-  int status = system("ls " AGOGO_PROJECTS_DIR " | sort | column");
+  int status = system("ls " AGOG_PROJECTS_DIR " | sort | column");
 
   if (status != 0) {
     printf("Error: Could not list the projects.\n");
@@ -49,7 +49,7 @@ void create_project(char *project_name)
   }
 
   char command[256];
-  snprintf(command, sizeof(command), "mkdir -p " AGOGO_PROJECTS_DIR "/%s", project_name);
+  snprintf(command, sizeof(command), "mkdir -p " AGOG_PROJECTS_DIR "/%s", project_name);
 
   int status = system(command);
   if (status != 0) {
@@ -68,12 +68,12 @@ void destroy_project(char *project_name)
   }
 
   if (is_clocked_on()) {
-    agogo_clockoff();
+    agog_clockoff();
   }
 
   printf("Destroying project %s\n", project_name);
   char command[256];
-  snprintf(command, sizeof(command), "rm -rf " AGOGO_PROJECTS_DIR "/%s", project_name);
+  snprintf(command, sizeof(command), "rm -rf " AGOG_PROJECTS_DIR "/%s", project_name);
 
   int status = system(command);
   if (status != 0) {
@@ -83,10 +83,10 @@ void destroy_project(char *project_name)
 }
 
 
-// reads the basename of the softlink AGOGO_CURRENTS_DIR/project
+// reads the basename of the softlink AGOG_CURRENTS_DIR/project
 char *get_current_project() 
 {
-  char *command = "basename $(readlink " AGOGO_CURRENTS_DIR "/project )";
+  char *command = "basename $(readlink " AGOG_CURRENTS_DIR "/project )";
   FILE *fp = popen(command, "r");
   if (fp == NULL) {
     printf("Error: Could not read the current project.\n");
@@ -107,7 +107,7 @@ char *get_current_project()
 bool project_exists(char *project_name) 
 {
   char project_path[256];
-  snprintf(project_path, sizeof(project_path), AGOGO_PROJECTS_DIR "/%s", project_name);
+  snprintf(project_path, sizeof(project_path), AGOG_PROJECTS_DIR "/%s", project_name);
 
   char command[512];
   snprintf(command, sizeof(command), "test -d %s", project_path);

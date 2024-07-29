@@ -1,5 +1,5 @@
 /* ============================================================
- *  AGOGO 
+ *  AGOG 
  * ------------------------------------------------------------
  *
  *  LICENSE: MIT
@@ -13,10 +13,10 @@
  *
  *  EXAMPLE USAGE:
  *
- *    agogo project --create [project]
- *    agogo clockon [project]
- *    agogo task --add [task]
- *    agogo log 1h [task] --message "I did this"
+ *    agog project --create [project]
+ *    agog clockon [project]
+ *    agog task --add [task]
+ *    agog log 1h [task] --message "I did this"
  * 
  * ============================================================
  */
@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "agogo.h"
+#include "agog.h"
 #include "project.h"
 #include "task.h"
 #include "clock.h"
@@ -46,12 +46,12 @@
  * */
 
 // Setup
-void agogo_setup();
+void agog_setup();
 void check_setup();
 
 // Help and print
 void print_short_help();
-void agogo_help();
+void agog_help();
 
 
 /* ============================================================
@@ -72,30 +72,30 @@ int main(int argc, char *argv[])
 
   if (strcmp(first_command, "setup") == 0) {
     // I know this is a silly user experience, but it's just a demo
-    agogo_setup();
+    agog_setup();
   }
   check_setup();
 
   if (strcmp(first_command, "project") == 0) {
-    exit_code = agogo_project(argc, argv);
+    exit_code = agog_project(argc, argv);
   }
   else if (strcmp(first_command, "task") == 0) {
-    exit_code = agogo_task(argc, argv);
+    exit_code = agog_task(argc, argv);
   }
   else if (strcmp(first_command, "clockon") == 0) {
-    exit_code = agogo_clockon(argc, argv);
+    exit_code = agog_clockon(argc, argv);
   }
   else if (strcmp(first_command, "clockoff") == 0) {
-    exit_code = agogo_clockoff();
+    exit_code = agog_clockoff();
   }
   else if (strcmp(first_command, "log") == 0) {
-    exit_code = agogo_log(argc, argv);
+    exit_code = agog_log(argc, argv);
   }
   else if (strcmp(first_command, "status") == 0) {
-    exit_code = agogo_status();
+    exit_code = agog_status();
   }
   else if (strcmp(first_command, "help") == 0) {
-    agogo_help();
+    agog_help();
   }
   else {
     printf("Error: Unknown command %s\n", first_command);
@@ -111,21 +111,21 @@ int main(int argc, char *argv[])
  */
 
 
-void agogo_setup() {
-  // create the agogo directory
-  int status = system("mkdir -p " AGOGO_PROJECTS_DIR);
+void agog_setup() {
+  // create the agog directory
+  int status = system("mkdir -p " AGOG_PROJECTS_DIR);
   if (status != 0) {
-    printf("Error: Could not create the agogo directory.\n");
+    printf("Error: Could not create the agog directory.\n");
     exit(EXIT_FAILURE);
   }
 }
 
 
 void check_setup() {
-  // check that the agogo directory exists
-  int status = system("test -d " AGOGO_DIR);
+  // check that the agog directory exists
+  int status = system("test -d " AGOG_DIR);
   if (status != 0) {
-    printf("Error: Agogo directory not found. Please run `agogo setup` to create the directory.\n");
+    printf("Error: Agogo directory not found. Please run `agog setup` to create the directory.\n");
     exit(EXIT_FAILURE);
   }
 }
@@ -140,12 +140,12 @@ void check_setup() {
 void print_short_help() {
   printf("============================================================\n");
   printf("Agogo - A command-line tool for project management.\n");
-  printf("Version: %s\n", AGOGO_VERSION);
+  printf("Version: %s\n", AGOG_VERSION);
   printf("============================================================\n");
 }
 
 
-void agogo_help() {
+void agog_help() {
   return;
 }
 

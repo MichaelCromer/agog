@@ -1,7 +1,7 @@
 #include "clock.h"
 
 
-int agogo_clockon(int argc, char *argv[]) 
+int agog_clockon(int argc, char *argv[]) 
 {
   if (argc < 3) {
     printf("Error: Missing project name\n");
@@ -18,14 +18,14 @@ int agogo_clockon(int argc, char *argv[])
 
   // then check if we are already clocked on to a project
   if (is_clocked_on()) {
-    system("rm " AGOGO_CURRENTS_DIR "/project");
+    system("rm " AGOG_CURRENTS_DIR "/project");
   }
 
   char project_path[256];
-  snprintf(project_path, sizeof(project_path), "%s/%s", AGOGO_PROJECTS_DIR, project_name);
+  snprintf(project_path, sizeof(project_path), "%s/%s", AGOG_PROJECTS_DIR, project_name);
 
   char command[512];
-  snprintf(command, sizeof(command), "ln -s %s " AGOGO_CURRENTS_DIR "/project", project_path);
+  snprintf(command, sizeof(command), "ln -s %s " AGOG_CURRENTS_DIR "/project", project_path);
 
   int status = system(command);
   if (status != 0) {
@@ -38,7 +38,7 @@ int agogo_clockon(int argc, char *argv[])
 }
 
 
-int agogo_clockoff() 
+int agog_clockoff() 
 {
   if (!is_clocked_on()) {
     printf("Error: Not currently clocked on to any project.\n");
@@ -46,7 +46,7 @@ int agogo_clockoff()
   }
 
   printf("Clocking off project %s\n", get_current_project());
-  int status = system("rm " AGOGO_CURRENTS_DIR "/*");
+  int status = system("rm " AGOG_CURRENTS_DIR "/*");
   if (status != 0) {
     printf("Error: Could not clock off.\n");
     exit(EXIT_FAILURE);
@@ -56,7 +56,7 @@ int agogo_clockoff()
 
 bool is_clocked_on() 
 {
-  return (system("test -L " AGOGO_CURRENTS_DIR "/project") == 0);
+  return (system("test -L " AGOG_CURRENTS_DIR "/project") == 0);
 }
 
 
@@ -83,13 +83,13 @@ int parse_time(char *time_str)
       minutes = unit;
       unit = 0;
     } else {
-      printf("Error: Invalid time format. Use xhym or xh or xm\n");
+      printf("Error: Invalid time format. Use XhYm or Xh or Xm\n");
       exit(EXIT_FAILURE);
     }
   }
 
   if (h_count > 1 || m_count > 1) {
-    printf("Error: Invalid time format. Use xhym or xh or xm\n");
+    printf("Error: Invalid time format. Use XhYm or Xh or Xm\n");
     exit(EXIT_FAILURE);
   }
 

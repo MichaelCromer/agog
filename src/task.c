@@ -1,7 +1,7 @@
 #include "task.h"
 
 
-int agogo_task(int argc, char *argv[])
+int agog_task(int argc, char *argv[])
 {
   if (argc < 3) {
     list_tasks();
@@ -72,7 +72,7 @@ int agogo_task(int argc, char *argv[])
   }
 
   else {
-    printf("Error: Unknown subcommand %s for agogo-task\n", sub_command);
+    printf("Error: Unknown subcommand %s for agog-task\n", sub_command);
     return EXIT_FAILURE;
   }
 
@@ -88,7 +88,7 @@ void list_tasks()
     return;
   }
 
-  int status = system("ls " AGOGO_CURRENTS_DIR "/project | sort | column");
+  int status = system("ls " AGOG_CURRENTS_DIR "/project | sort | column");
 
   if (status != 0) {
     printf("Error: Could not list the tasks.\n");
@@ -110,7 +110,7 @@ void add_task(char *task_name)
   }
 
   char command[256];
-  snprintf(command, sizeof(command), "echo \"0 0\" > " AGOGO_CURRENTS_DIR "/project/%s", task_name);
+  snprintf(command, sizeof(command), "echo \"0 0\" > " AGOG_CURRENTS_DIR "/project/%s", task_name);
   if (system(command) != 0) {
     printf("Error: Could not add the task %s.\n", task_name);
     exit(EXIT_FAILURE);
@@ -127,7 +127,7 @@ void remove_task(char *task_name)
     return;
   }
   char command[256];
-  snprintf(command, sizeof(command), "rm " AGOGO_CURRENTS_DIR "/project/%s", task_name);
+  snprintf(command, sizeof(command), "rm " AGOG_CURRENTS_DIR "/project/%s", task_name);
 
   int status = system(command);
   if (status != 0) {
@@ -146,7 +146,7 @@ void move_task(char *old_task, char *new_task) {
   }
 
   char command[256];
-  snprintf(command, sizeof(command), "mv " AGOGO_CURRENTS_DIR "/project/%s " AGOGO_CURRENTS_DIR "/project/%s", old_task, new_task);
+  snprintf(command, sizeof(command), "mv " AGOG_CURRENTS_DIR "/project/%s " AGOG_CURRENTS_DIR "/project/%s", old_task, new_task);
 
   int status = system(command);
   if (status != 0) {
@@ -166,7 +166,7 @@ void set_current_task(char *task_name)
   }
 
   if (has_current_task()) {
-    int status = system("rm " AGOGO_DIR "/current/task");
+    int status = system("rm " AGOG_DIR "/current/task");
     if (status != 0) {
       printf("Error: Could not unset the current task.\n");
       exit(EXIT_FAILURE);
@@ -174,7 +174,7 @@ void set_current_task(char *task_name)
   }
 
   char command[256];
-  snprintf(command, sizeof(command), "ln -s " AGOGO_CURRENTS_DIR "/project/%s " AGOGO_CURRENTS_DIR "/task", task_name);
+  snprintf(command, sizeof(command), "ln -s " AGOG_CURRENTS_DIR "/project/%s " AGOG_CURRENTS_DIR "/task", task_name);
 
   int status = system(command);
   if (status != 0) {
@@ -188,7 +188,7 @@ void set_current_task(char *task_name)
 
 char *get_current_task() 
 {
-  char *command = "basename $(readlink " AGOGO_CURRENTS_DIR "/task )";
+  char *command = "basename $(readlink " AGOG_CURRENTS_DIR "/task )";
   FILE *fp = popen(command, "r");
   if (fp == NULL) {
     printf("Error: Could not read the current task.\n");
@@ -212,7 +212,7 @@ bool has_current_task()
     return false;
   }
 
-  char *command = "test -f " AGOGO_DIR "/current/task";
+  char *command = "test -f " AGOG_DIR "/current/task";
   int status = system(command);
   if (status != 0) {
     return false;
@@ -229,7 +229,7 @@ bool task_exists(char *task_name)
   }
 
   char command[256];
-  snprintf(command, sizeof(command), "test -f " AGOGO_CURRENTS_DIR "/project/%s", task_name);
+  snprintf(command, sizeof(command), "test -f " AGOG_CURRENTS_DIR "/project/%s", task_name);
 
   int status = system(command);
   if (status != 0) {

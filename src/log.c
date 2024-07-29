@@ -1,7 +1,7 @@
 #include "log.h"
 
 
-int agogo_log(int argc, char **argv)
+int agog_log(int argc, char **argv)
 {
   if (argc < 3) {
     printf("Not implemented yet\n");
@@ -85,6 +85,6 @@ char *get_log_line(char *log_file, int line_number)
 char *get_log_file(char *task_name)
 {
   char *log_file = malloc(256);
-  snprintf(log_file, 256, AGOGO_CURRENTS_DIR "/project/%s", task_name);
+  snprintf(log_file, 256, AGOG_CURRENTS_DIR "/project/%s", task_name);
   return log_file;
 }
